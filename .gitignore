@@ -1,0 +1,14 @@
+# Ignorar dependências
+client/node_modules/
+server/node_modules/
+
+# Arquivos de ambiente
+client/.env
+server/.env
+
+# Logs
+*.log
+
+# IDEs
+.vscode/
+.idea/
