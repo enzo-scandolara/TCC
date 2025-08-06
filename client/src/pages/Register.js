@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Footer from '../components/Footer';
 
 export default function Register() {
   const [nome, setNome] = useState('');
@@ -33,7 +34,7 @@ export default function Register() {
   };
 
   return (
-    <div
+    <><div
       style={{
         backgroundImage: "url('/images/salao.jpg')",
         backgroundSize: 'cover',
@@ -64,8 +65,7 @@ export default function Register() {
                       className="form-control"
                       value={nome}
                       onChange={(e) => setNome(e.target.value)}
-                      required
-                    />
+                      required />
                   </div>
 
                   <div className="form-group">
@@ -77,8 +77,7 @@ export default function Register() {
                       className="form-control"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
+                      required />
                   </div>
 
                   <div className="form-group">
@@ -90,8 +89,7 @@ export default function Register() {
                       className="form-control"
                       value={senha}
                       onChange={(e) => setSenha(e.target.value)}
-                      required
-                    />
+                      required />
                   </div>
 
                   <div className="form-group d-flex justify-content-between mt-4">
@@ -99,8 +97,7 @@ export default function Register() {
                       type="submit"
                       name="submit"
                       className="btn btn-info btn-md"
-                      value="Registrar"
-                    />
+                      value="Registrar" />
                     <a href="/login" className="btn btn-secondary btn-md ml-3">Voltar para login</a>
                   </div>
                 </form>
@@ -110,6 +107,8 @@ export default function Register() {
         </div>
       </div>
     </div>
+    <Footer />
+    </>
   );
 
 }

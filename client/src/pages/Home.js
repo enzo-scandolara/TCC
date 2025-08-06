@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
+import Footer from '../components/Footer.js';
 
 export default function Home() {
   return (
-    <div 
-      style={{ 
+    <><div
+      style={{
         backgroundImage: "url('/images/salao.jpg')",
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -43,5 +44,7 @@ export default function Home() {
         </nav>
       </div>
     </div>
+    <Footer />
+    </>
   );
 }

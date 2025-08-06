@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import Footer from '../components/Footer.js';
 
 export default function PendingAppointments() {
   const [appointments, setAppointments] = useState([]);
@@ -67,7 +68,7 @@ export default function PendingAppointments() {
   };
 
   return (
-    <div
+    <><div
       style={{
         backgroundImage: "url('/images/salao.jpg')",
         backgroundSize: 'cover',
@@ -140,5 +141,7 @@ export default function PendingAppointments() {
         </Link>
       </div>
     </div>
+    <Footer />
+    </>
   );
 }

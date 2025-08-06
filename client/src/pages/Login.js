@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
-
+import Footer from '../components/Footer.js';
 
 export default function Login({ onLogin }) {
   const [username, setUsername] = useState('');
@@ -36,8 +36,8 @@ export default function Login({ onLogin }) {
   };
 
   return (
-    <div 
-      style={{ 
+    <><div
+      style={{
         backgroundImage: "url('/images/salao.jpg')",
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -63,8 +63,7 @@ export default function Login({ onLogin }) {
                       className="form-control"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      required
-                    />
+                      required />
                   </div>
 
                   <div className="form-group">
@@ -76,8 +75,7 @@ export default function Login({ onLogin }) {
                       className="form-control"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
+                      required />
                   </div>
 
                   <div className="form-group d-flex justify-content-between mt-4">
@@ -85,8 +83,7 @@ export default function Login({ onLogin }) {
                       type="submit"
                       name="submit"
                       className="btn btn-info btn-md"
-                      value="Enviar"
-                    />
+                      value="Enviar" />
                     <a href="/register" className="btn btn-secondary btn-md ms-5">
                       Registre-se
                     </a>
@@ -98,5 +95,8 @@ export default function Login({ onLogin }) {
         </div>
       </div>
     </div>
+    <Footer />
+    </>
+
   );
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-
+import Footer from '../components/Footer.js';
 
 export default function NewAppointment() {
   const [servico, setServico] = useState('');
@@ -54,8 +54,8 @@ export default function NewAppointment() {
   };
 
   return (
-    <div 
-      style={{ 
+    <><div
+      style={{
         backgroundImage: "url('/images/salao.jpg')",
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -80,8 +80,7 @@ export default function NewAppointment() {
               className="form-control"
               value={servico}
               onChange={(e) => setServico(e.target.value)}
-              required
-            />
+              required />
           </div>
 
           <div className="mb-3">
@@ -91,8 +90,7 @@ export default function NewAppointment() {
               className="form-control"
               value={data}
               onChange={(e) => setData(e.target.value)}
-              required
-            />
+              required />
           </div>
 
           <div className="mb-4">
@@ -101,8 +99,7 @@ export default function NewAppointment() {
               className="form-control"
               rows="3"
               value={observacoes}
-              onChange={(e) => setObservacoes(e.target.value)}
-            />
+              onChange={(e) => setObservacoes(e.target.value)} />
           </div>
 
           <button type="submit" className="btn btn-primary w-100">
@@ -116,6 +113,9 @@ export default function NewAppointment() {
 
       </div>
     </div>
+    <Footer />
+    </>
+  
   );
   
 }
