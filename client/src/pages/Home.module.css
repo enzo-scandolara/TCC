@@ -1,0 +1,72 @@
+.welcomeContainer {
+  background-color: rgb(15, 15, 15);
+  background-size: cover;
+  background-position: center;
+  min-height: calc(100vh - 56px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.welcomeCard {
+  background-color: rgba(0, 0, 0, 0.95);
+  max-width: 400px;
+  width: 100%;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  border: none;
+}
+
+.welcomeTitle {
+  color: #ffffff;
+  margin-bottom: 1.5rem;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.welcomeText {
+  color: #ffffff;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.ctaButton {
+  background-color: #fdd50d;
+  color: rgb(255, 255, 255);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 50px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.ctaButton:hover {
+  background-color: #d7bf0b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+.ctaButton i {
+  margin-right: 0.5rem;
+  font-size: 1.2rem;
+}
+
+/* Efeito de flutuação sutil para o card */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.welcomeCard {
+  animation: float 4s ease-in-out infinite;
+}

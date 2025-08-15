@@ -1,50 +1,30 @@
 import { Link } from 'react-router-dom';
-import Footer from '../components/Footer.js';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import styles from './Home.module.css';
 
 export default function Home() {
   return (
-    <><div
-      style={{
-        backgroundImage: "url('/images/salao.jpg')",
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        minHeight: '100vh',
-      }}
-      className="d-flex justify-content-center align-items-center"
-    >
-      <div className="card shadow p-4 bg-light" style={{ maxWidth: '400px', width: '100%', opacity: 0.95 }}>
-        <h1 className="card-title text-center mb-4 text-primary">Bem-vindo(a)!</h1>
-        <nav>
-          <ul className="list-unstyled">
-            <li className="mb-3">
-              <Link
-                to="/agendar"
-                className="btn btn-primary w-100"
-              >
-                Agendar um Serviço
-              </Link>
-            </li>
-            <li className="mb-3">
-              <Link
-                to="/agendamentos/pendentes"
-                className="btn btn-warning w-100"
-              >
-                Agendamentos Pendentes
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/agendamentos/concluidos"
-                className="btn btn-success w-100"
-              >
-                Agendamentos Concluídos
-              </Link>
-            </li>
-          </ul>
-        </nav>
+    <>
+      <Navbar />
+      
+      <div className={styles.welcomeContainer}>
+        <div className={styles.welcomeCard}>
+          <h1 className={styles.welcomeTitle}>Bem-vindo à Barbearia Pai & Filho!</h1>
+          <p className={styles.welcomeText}>
+            Descubra a tradição e qualidade do nosso atendimento. 
+            Agende seu horário e tenha a melhor experiência em cuidados masculinos.
+          </p>
+          <Link
+            to="/agendar"
+            className={styles.ctaButton}
+          >
+            <i className="bi bi-scissors"></i>Agendar Corte
+          </Link>
+        </div>
       </div>
-    </div>
-    <Footer />
+      
+      <Footer />
     </>
   );
 }
