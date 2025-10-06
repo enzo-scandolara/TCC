@@ -1,100 +1,123 @@
 const Appointment = require('../models/Appointment');
+const Service = require('../models/Service');
 
-// Criar novo agendamento
-const createAppointment = async (req, res) => {
-  const { date, service, notes } = req.body;
-
+// BUSCAR AGENDAMENTOS
+const getAppointments = async (req, res) => {
   try {
-    const newAppointment = new Appointment({
-      client: req.userId,
-      date,
+    const { status } = req.query;
+    let filter = {};
+    
+    if (status) {
+      filter.status = status;
+    }
+
+    const appointments = await Appointment.find(filter)
+      .populate('service', 'nome descricao duracao preco categoria')
+      .populate('client', 'nome email')
+      .sort({ date: -1 });
+
+    res.json(appointments);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ mensagem: 'Erro no servidor' });
+  }
+};
+
+// CRIAR AGENDAMENTO
+const createAppointment = async (req, res) => {
+  try {
+    const { service, client, date, notes } = req.body;
+
+    const appointment = new Appointment({
       service,
-      notes,
+      client, 
+      date,
+      notes: notes || `Serviço agendado`
     });
 
-    await newAppointment.save();
-    res.status(201).json(newAppointment);
+    await appointment.save();
+    
+    await appointment.populate('service', 'nome descricao duracao preco categoria');
+    await appointment.populate('client', 'nome email');
+
+    res.status(201).json({
+      mensagem: 'Agendamento criado com sucesso',
+      appointment
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Erro ao criar agendamento' });
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ mensagem: 'Dados de agendamento inválidos' });
+    }
+    
+    res.status(500).json({ mensagem: 'Erro no servidor' });
   }
 };
 
-// Listar agendamentos, permitindo o filtro de status (agendamento pendente, concluido etc)
-const getAppointments = async (req, res) => {
-  const userId = req.userId;
-  const { status } = req.query;
-
-  const filtro = { client: userId };
-  if (status) filtro.status = status;
-
-  try {
-    const agendamentos = await Appointment.find(filtro).sort({ date: 1 });
-    res.json(agendamentos);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Erro ao buscar agendamentos' });
-  }
-};
-
-// Buscar agendamento por ID
+//  BUSCAR AGENDAMENTO POR ID
 const getAppointmentById = async (req, res) => {
-  const { id } = req.params;
-
   try {
-    const appointment = await Appointment.findOne({ _id: id, client: req.userId });
+    const appointment = await Appointment.findById(req.params.id)
+      .populate('service', 'nome descricao duracao preco categoria')
+      .populate('client', 'nome email');
 
     if (!appointment) {
-      return res.status(404).json({ message: 'Agendamento não encontrado' });
+      return res.status(404).json({ mensagem: 'Agendamento não encontrado' });
     }
 
     res.json(appointment);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Erro ao buscar agendamento' });
+    res.status(500).json({ mensagem: 'Erro no servidor' });
   }
 };
 
-// Editar agendamento
+//  ATUALIZAR AGENDAMENTO
 const updateAppointment = async (req, res) => {
-  const { id } = req.params;
-  const { date, service, notes } = req.body;
-
   try {
-    const appointment = await Appointment.findOne({ _id: id, client: req.userId });
+    const { service, date, notes, status } = req.body;
+
+    const appointment = await Appointment.findByIdAndUpdate(
+      req.params.id,
+      { service, date, notes, status },
+      { new: true, runValidators: true }
+    )
+      .populate('service', 'nome descricao duracao preco categoria')
+      .populate('client', 'nome email');
 
     if (!appointment) {
       return res.status(404).json({ mensagem: 'Agendamento não encontrado' });
     }
 
-    if (date) appointment.date = date;
-    if (service) appointment.service = service;
-    if (notes) appointment.notes = notes;
-
-    await appointment.save();
-
-    res.json({ mensagem: 'Agendamento atualizado com sucesso', agendamento: appointment });
+    res.json({
+      mensagem: 'Agendamento atualizado com sucesso',
+      appointment
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ mensagem: 'Erro ao atualizar agendamento' });
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ mensagem: 'Dados de agendamento inválidos' });
+    }
+    
+    res.status(500).json({ mensagem: 'Erro no servidor' });
   }
 };
 
-// Deletar agendamento
+//  DELETAR AGENDAMENTO
 const deleteAppointment = async (req, res) => {
-  const { id } = req.params;
-
   try {
-    const appointment = await Appointment.findOneAndDelete({ _id: id, client: req.userId });
+    const appointment = await Appointment.findByIdAndDelete(req.params.id);
 
     if (!appointment) {
       return res.status(404).json({ mensagem: 'Agendamento não encontrado' });
     }
 
-    res.json({ mensagem: 'Agendamento deletado com sucesso' });
+    res.json({ mensagem: 'Agendamento excluído com sucesso' });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ mensagem: 'Erro ao deletar agendamento' });
+    res.status(500).json({ mensagem: 'Erro no servidor' });
   }
 };
 
@@ -104,5 +127,5 @@ module.exports = {
   getAppointments,
   getAppointmentById,
   updateAppointment,
-  deleteAppointment,
+  deleteAppointment
 };

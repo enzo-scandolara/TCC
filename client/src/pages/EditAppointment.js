@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import Footer from '../components/Footer.js';
 
 export default function EditAppointment() {
   const { id } = useParams();
@@ -129,7 +128,6 @@ export default function EditAppointment() {
         </Link>
       </div>
     </div>
-    <Footer />
     </>
   );
 }

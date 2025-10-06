@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import Footer from '../components/Footer.js';
+
 
 export default function CompletedAppointments() {
   const [appointments, setAppointments] = useState([]);
@@ -88,7 +88,7 @@ export default function CompletedAppointments() {
           </Link>
         </div>
       </div>
-      <Footer />
+   
     </>
   );
 }
