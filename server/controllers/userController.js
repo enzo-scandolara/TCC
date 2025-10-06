@@ -122,10 +122,35 @@ const getFuncionarios = async (req, res) => {
     res.status(500).json({ mensagem: 'Erro no servidor' });
   }
 };
+//  OBTER DADOS DO USUÁRIO LOGADO
+const getMe = async (req, res) => {
+  try {
+    // O middleware authMiddleware já adicionou userId e userTipo no request
+    const user = await User.findById(req.userId).select('-senha'); // Remove a senha do resultado
+    
+    if (!user) {
+      return res.status(404).json({ mensagem: 'Usuário não encontrado' });
+    }
 
+    res.json({
+      _id: user._id,
+      nome: user.nome,
+      email: user.email,
+      tipo: user.tipo,
+      especializacoes: user.especializacoes,
+      horarioTrabalho: user.horarioTrabalho,
+      ativo: user.ativo,
+      createdAt: user.createdAt
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ mensagem: 'Erro no servidor' });
+  }
+};
 module.exports = {
   loginUser,
   registerUser,
   registerFuncionario, // ← novo
-  getFuncionarios      // ← novo
+  getFuncionarios,
+  getMe      // ← novo
 };

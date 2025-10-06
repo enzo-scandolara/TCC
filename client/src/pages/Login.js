@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext'; 
 import Footer from '../components/Footer.js';
 
 export default function Login({ onLogin }) {
@@ -8,6 +8,7 @@ export default function Login({ onLogin }) {
   const [password, setPassword] = useState('');
   const [mensagem, setMensagem] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth(); 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,6 +29,17 @@ export default function Login({ onLogin }) {
       }
 
       localStorage.setItem('token', data.token);
+      
+      // ⚠️ NOVO: Buscar dados completos do usuário
+      const userResponse = await fetch('http://localhost:7777/api/users/me', {
+        headers: { 'Authorization': `Bearer ${data.token}` }
+      });
+      
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        login(userData); // PREENCHE O AUTH CONTEXT
+      }
+      
       onLogin(data.token);
       navigate('/home');
     } catch (error) {

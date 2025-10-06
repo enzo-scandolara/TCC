@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-
+import { AuthProvider } from './context/AuthContext';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -9,10 +9,12 @@ import PendingAppointments from './pages/PendingAppointments';
 import CompletedAppointments from './pages/CompletedAppointments';
 import EditAppointment from './pages/EditAppointment';
 
+
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
 
   return (
+  <AuthProvider> 
     <Router>
       <Routes>
         <Route path="/" element={token ? <Home /> : <Navigate to="/login" replace />} />
@@ -25,5 +27,6 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
+  </AuthProvider> 
   );
 }
