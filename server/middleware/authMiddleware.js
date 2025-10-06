@@ -19,4 +19,40 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
-module.exports = authMiddleware;
+// Só administradores
+const somenteAdmin = (req, res, next) => {
+  if (req.userTipo !== 'admin') {
+    return res.status(403).json({ 
+      mensagem: 'Acesso negado. Somente administradores.' 
+    });
+  }
+  next();
+};
+
+// Administradores ou funcionários
+const funcionarioOuAdmin = (req, res, next) => {
+  if (req.userTipo !== 'admin' && req.userTipo !== 'funcionario') {
+    return res.status(403).json({ 
+      mensagem: 'Acesso negado. Área restrita.' 
+    });
+  }
+  next();
+};
+
+// Só clientes
+const somenteCliente = (req, res, next) => {
+  if (req.userTipo !== 'cliente') {
+    return res.status(403).json({ 
+      mensagem: 'Acesso negado. Área somente para clientes.' 
+    });
+  }
+  next();
+};
+
+// Exportamos TODOS os middlewares
+module.exports = {
+  authMiddleware,      // ← já existia
+  somenteAdmin,        // ← novo
+  funcionarioOuAdmin,  // ← novo  
+  somenteCliente       // ← novo
+};
