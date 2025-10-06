@@ -5,6 +5,7 @@ const connectDB = require('./mongo');
 const userRoutes = require('./routes/userRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
+const employeeRoutes = require('./routes/employeeRoutes');
 const { PORT } = require('./config');
 
 connectDB();
@@ -17,5 +18,6 @@ app.use(express.json());
 app.use('/api/users', userRoutes);
 app.use('/api/agendamentos', appointmentRoutes);
 app.use('/api/services', serviceRoutes);
+app.use('/api/employees', employeeRoutes);
 
 app.listen(PORT, () => console.log(`Servidor rodando na porta http://localhost:${PORT}`));

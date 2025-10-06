@@ -15,7 +15,7 @@ export default function PrivateRoute({ children, requiredRole }) {
     return <Navigate to="/login" replace />;
   }
 
-  // 2. Verifica se tem a role necessária (se especificada)
+  // 2. Verifica se tem o role necessária (se especificada)
   if (requiredRole) {
     // Admin tem acesso a tudo
     if (!isAdmin && user?.tipo !== requiredRole) {

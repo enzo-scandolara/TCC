@@ -14,6 +14,7 @@ const getAppointments = async (req, res) => {
     const appointments = await Appointment.find(filter)
       .populate('service', 'nome descricao duracao preco categoria')
       .populate('client', 'nome email')
+      .populate('barber', 'nome email') // ← ADICIONAR BARBER AQUI
       .sort({ date: -1 });
 
     res.json(appointments);
@@ -26,19 +27,22 @@ const getAppointments = async (req, res) => {
 // CRIAR AGENDAMENTO
 const createAppointment = async (req, res) => {
   try {
-    const { service, client, date, notes } = req.body;
+    const { service, client, barber, date, notes } = req.body;
 
     const appointment = new Appointment({
       service,
       client, 
+      barber,
       date,
       notes: notes || `Serviço agendado`
     });
 
     await appointment.save();
     
+    // POPULAR TODOS OS CAMPOS, INCLUINDO BARBER
     await appointment.populate('service', 'nome descricao duracao preco categoria');
     await appointment.populate('client', 'nome email');
+    await appointment.populate('barber', 'nome email'); // ← ADICIONAR BARBER AQUI
 
     res.status(201).json({
       mensagem: 'Agendamento criado com sucesso',
@@ -55,12 +59,13 @@ const createAppointment = async (req, res) => {
   }
 };
 
-//  BUSCAR AGENDAMENTO POR ID
+// BUSCAR AGENDAMENTO POR ID
 const getAppointmentById = async (req, res) => {
   try {
     const appointment = await Appointment.findById(req.params.id)
       .populate('service', 'nome descricao duracao preco categoria')
-      .populate('client', 'nome email');
+      .populate('client', 'nome email')
+      .populate('barber', 'nome email'); // ← CORRIGIR (não usar await separado)
 
     if (!appointment) {
       return res.status(404).json({ mensagem: 'Agendamento não encontrado' });
@@ -73,18 +78,19 @@ const getAppointmentById = async (req, res) => {
   }
 };
 
-//  ATUALIZAR AGENDAMENTO
+// ATUALIZAR AGENDAMENTO
 const updateAppointment = async (req, res) => {
   try {
-    const { service, date, notes, status } = req.body;
+    const { service, date, notes, status, barber } = req.body; // ← ADICIONAR BARBER
 
     const appointment = await Appointment.findByIdAndUpdate(
       req.params.id,
-      { service, date, notes, status },
+      { service, date, notes, status, barber }, // ← ADICIONAR BARBER
       { new: true, runValidators: true }
     )
       .populate('service', 'nome descricao duracao preco categoria')
-      .populate('client', 'nome email');
+      .populate('client', 'nome email')
+      .populate('barber', 'nome email'); // ← ADICIONAR BARBER AQUI
 
     if (!appointment) {
       return res.status(404).json({ mensagem: 'Agendamento não encontrado' });
@@ -105,7 +111,7 @@ const updateAppointment = async (req, res) => {
   }
 };
 
-//  DELETAR AGENDAMENTO
+// DELETAR AGENDAMENTO
 const deleteAppointment = async (req, res) => {
   try {
     const appointment = await Appointment.findByIdAndDelete(req.params.id);
@@ -120,7 +126,6 @@ const deleteAppointment = async (req, res) => {
     res.status(500).json({ mensagem: 'Erro no servidor' });
   }
 };
-
 
 module.exports = {
   createAppointment,

@@ -1,11 +1,14 @@
+// src/pages/NewAppointment.js
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import BarberSelector from '../components/BarberSelector'; // ← IMPORTAR
 
 const NewAppointment = () => {
   const [services, setServices] = useState([]);
   const [selectedService, setSelectedService] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
+  const [selectedBarber, setSelectedBarber] = useState(''); // ← NOVO ESTADO
   const [loading, setLoading] = useState(false);
   const [mensagem, setMensagem] = useState('');
   const { user } = useAuth();
@@ -23,33 +26,13 @@ const NewAppointment = () => {
     }
   };
 
-  // Buscar funcionários disponíveis
-  const fetchFuncionarios = async () => {
-    // Implementaremos depois na Fase 3
-    return [
-      { _id: '1', nome: 'João Silva' },
-      { _id: '2', nome: 'Pedro Santos' }
-    ];
-  };
-
-  // Gerar horários disponíveis (simulação)
-  const generateTimeSlots = () => {
-    const slots = [];
-    for (let hour = 8; hour <= 20; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        slots.push(time);
-      }
-    }
-    return slots;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMensagem('');
 
-    if (!selectedService || !selectedDate || !selectedTime) {
+    // VALIDAÇÕES ATUALIZADAS
+    if (!selectedService || !selectedDate || !selectedTime || !selectedBarber) {
       setMensagem('Preencha todos os campos obrigatórios');
       setLoading(false);
       return;
@@ -68,7 +51,7 @@ const NewAppointment = () => {
         body: JSON.stringify({
           service: selectedService,
           client: user._id,
-          barbeiro: '1', // Temporário - implementaremos seleção na Fase 3
+          barber: selectedBarber, // ← AGORA ENVIAMOS O BARBEIRO
           date: `${selectedDate}T${selectedTime}:00.000Z`,
           notes: `Serviço: ${selectedServiceData.nome}`
         })
@@ -82,6 +65,7 @@ const NewAppointment = () => {
         setSelectedService('');
         setSelectedDate('');
         setSelectedTime('');
+        setSelectedBarber(''); // ← LIMPAR BARBEIRO TAMBÉM
       } else {
         setMensagem(data.mensagem || 'Erro ao criar agendamento');
       }
@@ -97,11 +81,16 @@ const NewAppointment = () => {
     return services.find(s => s._id === selectedService);
   };
 
+  // Resetar barbeiro selecionado quando mudar serviço, data ou hora
+  useEffect(() => {
+    setSelectedBarber('');
+  }, [selectedService, selectedDate, selectedTime]);
+
   useEffect(() => {
     fetchServices();
   }, []);
 
- return (
+  return (
     <div className="container mt-4">
       <div className="row justify-content-center">
         <div className="col-md-8">
@@ -180,8 +169,16 @@ const NewAppointment = () => {
                   </div>
                 </div>
 
-                {/* Resumo */}
-                {selectedService && selectedDate && selectedTime && (
+                {/* Seleção de Barbeiro - NOVO COMPONENTE */}
+                <BarberSelector
+                  selectedDate={selectedDate}
+                  selectedTime={selectedTime}
+                  selectedService={selectedService}
+                  onBarberSelect={setSelectedBarber}
+                />
+
+                {/* Resumo ATUALIZADO */}
+                {selectedService && selectedDate && selectedTime && selectedBarber && (
                   <div className="alert alert-info border-0">
                     <h6 className="fw-bold">
                       <i className="bi bi-card-checklist me-2"></i>
@@ -192,13 +189,16 @@ const NewAppointment = () => {
                         <strong>Serviço:</strong><br/>
                         <strong>Duração:</strong><br/>
                         <strong>Preço:</strong><br/>
-                        <strong>Data:</strong>
+                        <strong>Data:</strong><br/>
+                        <strong>Barbeiro:</strong>
                       </div>
                       <div className="col-6">
                         {getSelectedServiceData()?.nome}<br/>
                         {getSelectedServiceData()?.duracao} minutos<br/>
                         R$ {getSelectedServiceData()?.preco}<br/>
-                        {selectedDate} às {selectedTime}
+                        {selectedDate} às {selectedTime}<br/>
+                        {/* Aqui precisaríamos do nome do barbeiro - podemos melhorar depois */}
+                        {selectedBarber ? 'Barbeiro selecionado' : 'Não selecionado'}
                       </div>
                     </div>
                   </div>
@@ -208,7 +208,7 @@ const NewAppointment = () => {
                   <button 
                     type="submit" 
                     className="btn btn-primary btn-lg px-4"
-                    disabled={loading}
+                    disabled={loading || !selectedBarber} // ← DESABILITAR SE NÃO TIVER BARBEIRO
                   >
                     {loading ? (
                       <>
@@ -230,6 +230,18 @@ const NewAppointment = () => {
       </div>
     </div>
   );
+};
+
+// Manter a função generateTimeSlots
+const generateTimeSlots = () => {
+  const slots = [];
+  for (let hour = 8; hour <= 20; hour++) {
+    for (let minute = 0; minute < 60; minute += 30) {
+      const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      slots.push(time);
+    }
+  }
+  return slots;
 };
 
 export default NewAppointment;

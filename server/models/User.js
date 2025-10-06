@@ -32,6 +32,13 @@ const userSchema = new mongoose.Schema({
       type: String, 
     }
   },
+  horarioAlmoco:{
+      type: String,
+    },
+  fimHorarioAlmoco:{ 
+    type: String,
+  },
+  
   ativo: {
     type: Boolean,
     default: true

@@ -2,17 +2,20 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext'; 
 import Footer from '../components/Footer.js';
+import styles from './Login.module.css';
 
 export default function Login({ onLogin }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [mensagem, setMensagem] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth(); 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMensagem('');
+    setIsLoading(true);
 
     try {
       const response = await fetch('http://localhost:7777/api/users/login', {
@@ -25,90 +28,124 @@ export default function Login({ onLogin }) {
 
       if (!response.ok) {
         setMensagem(data.mensagem || 'Erro no login');
+        setIsLoading(false);
         return;
       }
 
       localStorage.setItem('token', data.token);
       
-      // ⚠️ NOVO: Buscar dados completos do usuário
       const userResponse = await fetch('http://localhost:7777/api/users/me', {
         headers: { 'Authorization': `Bearer ${data.token}` }
       });
       
       if (userResponse.ok) {
         const userData = await userResponse.json();
-        login(userData); // PREENCHE O AUTH CONTEXT
+        login(userData);
       }
       
       onLogin(data.token);
       navigate('/home');
     } catch (error) {
       setMensagem('Erro na conexão com o servidor');
+      setIsLoading(false);
     }
   };
 
   return (
-    <><div
-      style={{
-        backgroundImage: "url('/images/salao.jpg')",
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        minHeight: '100vh',
-      }}
-    >
-      <div id="login" className="d-flex align-items-center justify-content-center" style={{ minHeight: '100vh' }}>
-        <div className="container">
-          <div id="login-row" className="row justify-content-center align-items-center">
-            <div id="login-column" className="col-md-6">
-              <div id="login-box" className="col-md-12 p-4" style={{ backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: '8px' }}>
-                <form id="login-form" className="form" onSubmit={handleSubmit}>
-                  <h3 className="text-center text-dark">Login</h3>
+    <>
+      <div className={styles.loginContainer}>
+        <div 
+  className={styles.loginBackground}
+  style={{ backgroundImage: "url('/images/salao.jpg')" }}
+>
+          <div className={styles.loginOverlay}></div>
+          
+          <div className={`d-flex align-items-center justify-content-center ${styles.loginContent}`}>
+            <div className="container">
+              <div className="row justify-content-center align-items-center">
+                <div className="col-md-5 col-lg-4">
+                  <div className={styles.loginCard}>
+                    <div className={styles.loginHeader}>
+                      <h2 className={styles.loginTitle}>Bem-vindo</h2>
+                      <p className={styles.loginSubtitle}>Faça login em sua conta</p>
+                    </div>
 
-                  {mensagem && <p className="text-danger">{mensagem}</p>}
+                    <form className={styles.loginForm} onSubmit={handleSubmit}>
+                      {mensagem && (
+                        <div className="alert alert-danger" role="alert">
+                          {mensagem}
+                        </div>
+                      )}
 
-                  <div className="form-group">
-                    <label htmlFor="username" className="text-dark">Usuário:</label><br />
-                    <input
-                      type="text"
-                      name="username"
-                      id="username"
-                      className="form-control"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      required />
+                      <div className={styles.formGroup}>
+                        <label htmlFor="username" className={styles.formLabel}>
+                          E-mail
+                        </label>
+                        <input
+                          type="text"
+                          name="username"
+                          id="username"
+                          className={styles.formInput}
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          placeholder="seu@email.com"
+                          required 
+                        />
+                      </div>
+
+                      <div className={styles.formGroup}>
+                        <label htmlFor="password" className={styles.formLabel}>
+                          Senha
+                        </label>
+                        <input
+                          type="password"
+                          name="password"
+                          id="password"
+                          className={styles.formInput}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="Sua senha"
+                          required 
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        className={styles.loginBtn}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                            Entrando...
+                          </>
+                        ) : (
+                          'Entrar'
+                        )}
+                      </button>
+
+                      <div className={styles.loginDivider}>
+                        <span>ou</span>
+                      </div>
+
+                      <a href="/register" className={styles.registerBtn}>
+                        Criar uma conta
+                      </a>
+
+                      <div className={styles.loginLinks}>
+                        <a href="/forgot-password" className={styles.forgotLink}>
+                          Esqueceu sua senha?
+                        </a>
+                      </div>
+                    </form>
                   </div>
-
-                  <div className="form-group">
-                    <label htmlFor="password" className="text-dark">Senha:</label><br />
-                    <input
-                      type="password"
-                      name="password"
-                      id="password"
-                      className="form-control"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required />
-                  </div>
-
-                  <div className="form-group d-flex justify-content-between mt-4">
-                    <input
-                      type="submit"
-                      name="submit"
-                      className="btn btn-info btn-md"
-                      value="Enviar" />
-                    <a href="/register" className="btn btn-secondary btn-md ms-5">
-                      Registre-se
-                    </a>
-                  </div>
-                </form>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-    <Footer />
+      <Footer />
     </>
-
   );
 }

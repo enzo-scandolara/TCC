@@ -9,8 +9,9 @@ import NewAppointment from './pages/NewAppointment';
 import PendingAppointments from './pages/PendingAppointments';
 import CompletedAppointments from './pages/CompletedAppointments';
 import EditAppointment from './pages/EditAppointment';
-import ServiceManagement from './pages/ServiceManagement'; 
+import ServiceManagement from './pages/admin/ServiceManagement'; 
 import PrivateRoute from './components/PrivateRoute';
+import EmployeeManagement from './pages/admin/EmployeeManagement';
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -66,6 +67,13 @@ export default function App() {
             </Layout>
           } />
           
+          <Route path="/admin/funcionarios" element={
+  <Layout>
+    <PrivateRoute requiredRole="admin">
+      <EmployeeManagement />
+    </PrivateRoute>
+  </Layout>
+} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>

@@ -1,3 +1,4 @@
+// server/models/Appointment.js
 const mongoose = require('mongoose');
 
 const appointmentSchema = new mongoose.Schema({
@@ -10,6 +11,11 @@ const appointmentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Service', 
     required: true
+  },
+  barber: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true  
   },
   date: { 
     type: Date, 
