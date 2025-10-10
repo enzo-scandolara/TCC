@@ -8,10 +8,15 @@ const Layout = ({ children }) => {
       backgroundImage: "url('/images/salao.jpg')",
       backgroundSize: 'cover',
       backgroundPosition: 'center',
-      backgroundAttachment: 'fixed'
+      backgroundAttachment: 'fixed',
+      display: 'flex',
+      flexDirection: 'column'
     }}>
       <Navbar />
-      <main style={{ minHeight: 'calc(100vh - 120px)' }}>
+      <main style={{ 
+        flex: 1,
+        padding: '20px 0'
+      }}>
         {children}
       </main>
       <Footer />

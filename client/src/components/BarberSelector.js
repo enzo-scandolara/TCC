@@ -1,16 +1,22 @@
-// src/components/BarberSelector.js
-import { useState, useEffect, useCallback } from 'react'; // ← ADICIONAR useCallback
+import { useState, useEffect, useCallback } from 'react';
 
-const BarberSelector = ({ selectedDate, selectedTime, selectedService, onBarberSelect }) => {
+const BarberSelector = ({ selectedDate, selectedService, onBarberSelect, onTimeSelect }) => {
   const [barbers, setBarbers] = useState([]);
+  const [availableSlots, setAvailableSlots] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedBarber, setSelectedBarber] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
 
-  // Usar useCallback para memoizar a função
-  const fetchAvailableBarbers = useCallback(async () => {
-    if (!selectedDate || !selectedTime || !selectedService) {
+  // Buscar barbeiros e horários disponíveis
+  const fetchAvailableData = useCallback(async () => {
+    if (!selectedDate || !selectedService) {
       setBarbers([]);
+      setAvailableSlots([]);
+      setSelectedBarber('');
+      setSelectedTime('');
+      onBarberSelect('');
+      onTimeSelect('');
       return;
     }
 
@@ -18,7 +24,7 @@ const BarberSelector = ({ selectedDate, selectedTime, selectedService, onBarberS
     setError('');
 
     try {
-      // Buscar dados do serviço para obter duração e categoria
+      // Buscar dados do serviço para obter duração
       const serviceResponse = await fetch(`http://localhost:7777/api/services/${selectedService}`);
       const serviceData = await serviceResponse.json();
 
@@ -26,64 +32,84 @@ const BarberSelector = ({ selectedDate, selectedTime, selectedService, onBarberS
         throw new Error('Erro ao buscar dados do serviço');
       }
 
-      // Buscar barbeiros disponíveis
+      // Buscar barbeiros e horários disponíveis
+      const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://localhost:7777/api/employees/disponiveis?date=${selectedDate}&time=${selectedTime}&serviceDuration=${serviceData.duracao}&serviceCategory=${serviceData.categoria}`
+        `http://localhost:7777/api/agendamentos/horarios-disponiveis?date=${selectedDate}&serviceDuration=${serviceData.duracao}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
       );
 
       if (response.ok) {
         const data = await response.json();
-        setBarbers(data);
+        setBarbers(data.barbers || []);
+        setAvailableSlots(data.availableSlots || []);
         
-        // Auto-selecionar o primeiro barbeiro se houver apenas um
-        if (data.length === 1) {
-          setSelectedBarber(data[0]._id);
-          onBarberSelect(data[0]._id);
-        } else {
-          // Limpar seleção se não há apenas um barbeiro
-          setSelectedBarber('');
-          onBarberSelect('');
-        }
+        // Resetar seleções
+        setSelectedBarber('');
+        setSelectedTime('');
+        onBarberSelect('');
+        onTimeSelect('');
+        
       } else {
-        setError('Erro ao buscar barbeiros disponíveis');
+        setError('Erro ao buscar horários disponíveis');
         setBarbers([]);
+        setAvailableSlots([]);
       }
     } catch (error) {
       console.error('Erro:', error);
       setError('Erro na conexão com o servidor');
       setBarbers([]);
+      setAvailableSlots([]);
     } finally {
       setLoading(false);
     }
-  }, [selectedDate, selectedTime, selectedService, onBarberSelect]); // ← DEPENDÊNCIAS
+  }, [selectedDate, selectedService, onBarberSelect, onTimeSelect]);
 
-  // Atualizar barbeiros quando data/hora/serviço mudar
+  // Buscar dados quando data/serviço mudar
   useEffect(() => {
-    fetchAvailableBarbers();
-  }, [fetchAvailableBarbers]); // ← AGORA CORRETO
+    fetchAvailableData();
+  }, [fetchAvailableData]);
 
   const handleBarberChange = (barberId) => {
     setSelectedBarber(barberId);
+    setSelectedTime('');
     onBarberSelect(barberId);
+    onTimeSelect('');
   };
 
-  if (!selectedDate || !selectedTime || !selectedService) {
+  const handleTimeChange = (time) => {
+    setSelectedTime(time);
+    onTimeSelect(time);
+  };
+
+  // Agrupar horários disponíveis por barbeiro
+  const getAvailableTimesForBarber = (barberId) => {
+    return availableSlots
+      .filter(slot => slot.barberId === barberId)
+      .sort((a, b) => a.time.localeCompare(b.time));
+  };
+
+  if (!selectedDate || !selectedService) {
     return (
       <div className="alert alert-info">
         <i className="bi bi-info-circle me-2"></i>
-        Selecione data, horário e serviço para ver os barbeiros disponíveis
+        Selecione data e serviço para ver os horários disponíveis
       </div>
     );
   }
 
   return (
-    <div className="mb-3">
-      <label className="form-label fw-bold">Barbeiro *</label>
+    <div className="mb-4">
+      <label className="form-label fw-bold">Barbeiro e Horário *</label>
       
       {loading && (
         <div className="alert alert-info">
           <div className="spinner-border spinner-border-sm me-2" role="status"></div>
-          Buscando barbeiros disponíveis...
+          Buscando horários disponíveis...
         </div>
       )}
 
@@ -94,60 +120,88 @@ const BarberSelector = ({ selectedDate, selectedTime, selectedService, onBarberS
         </div>
       )}
 
-      {!loading && barbers.length === 0 && selectedDate && selectedTime && selectedService && (
+      {!loading && barbers.length === 0 && selectedDate && selectedService && (
         <div className="alert alert-warning">
           <i className="bi bi-clock me-2"></i>
-          Nenhum barbeiro disponível para este horário. Tente outro horário ou data.
+          Nenhum barbeiro disponível para esta data. Tente outra data.
         </div>
       )}
 
       {!loading && barbers.length > 0 && (
         <div className="row">
-          {barbers.map(barber => (
-            <div key={barber._id} className="col-md-6 mb-2">
-              <div className={`card ${selectedBarber === barber._id ? 'border-primary' : ''}`}>
-                <div className="card-body py-2">
-                  <div className="form-check">
-                    <input
-                      className="form-check-input"
-                      type="radio"
-                      name="barber"
-                      id={`barber-${barber._id}`}
-                      value={barber._id}
-                      checked={selectedBarber === barber._id}
-                      onChange={(e) => handleBarberChange(e.target.value)}
-                    />
-                    <label className="form-check-label w-100" htmlFor={`barber-${barber._id}`}>
-                      <div className="d-flex justify-content-between align-items-center">
-                        <div>
-                          <strong>{barber.nome}</strong>
-                          {barber.especializacoes && barber.especializacoes.length > 0 && (
-                            <small className="text-muted d-block">
-                              Especialidades: {barber.especializacoes.join(', ')}
-                            </small>
-                          )}
-                        </div>
-                        <div className="text-end">
-                          <small className="text-success">
-                            <i className="bi bi-check-circle me-1"></i>
-                            Disponível
+          {barbers.map(barber => {
+            const barberSlots = getAvailableTimesForBarber(barber._id);
+            return (
+              <div key={barber._id} className="col-12 mb-4">
+                <div className={`card ${selectedBarber === barber._id ? 'border-primary' : 'border-light'}`}>
+                  <div className="card-body">
+                    {/* Cabeçalho do Barbeiro */}
+                    <div className="form-check mb-3">
+                      <input
+                        className="form-check-input"
+                        type="radio"
+                        name="barber"
+                        id={`barber-${barber._id}`}
+                        value={barber._id}
+                        checked={selectedBarber === barber._id}
+                        onChange={(e) => handleBarberChange(e.target.value)}
+                        disabled={barberSlots.length === 0}
+                      />
+                      <label 
+                        className={`form-check-label fw-bold ${barberSlots.length === 0 ? 'text-muted' : ''}`} 
+                        htmlFor={`barber-${barber._id}`}
+                      >
+                        {barber.nome}
+                        {barber.especializacoes && barber.especializacoes.length > 0 && (
+                          <small className="text-muted ms-2">
+                            ({barber.especializacoes.join(', ')})
                           </small>
+                        )}
+                        {barberSlots.length === 0 && (
+                          <small className="text-warning ms-2">
+                            (Sem horários disponíveis)
+                          </small>
+                        )}
+                      </label>
+                    </div>
+
+                    {/* Horários Disponíveis */}
+                    {selectedBarber === barber._id && barberSlots.length > 0 && (
+                      <div className="ms-4">
+                        <h6 className="text-muted mb-3">
+                          <i className="bi bi-clock me-1"></i>
+                          Horários Disponíveis:
+                        </h6>
+                        <div className="row">
+                          {barberSlots.map(slot => (
+                            <div key={slot.time} className="col-md-3 col-6 mb-2">
+                              <button
+                                type="button"
+                                className={`btn w-100 ${selectedTime === slot.time ? 'btn-primary' : 'btn-outline-primary'}`}
+                                onClick={() => handleTimeChange(slot.time)}
+                              >
+                                {slot.time}
+                              </button>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    </label>
+                    )}
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {selectedBarber && (
-        <div className="mt-2 p-2 bg-light rounded">
+      {selectedBarber && selectedTime && (
+        <div className="mt-3 p-3 bg-light rounded">
           <small className="text-muted">
             <i className="bi bi-person-check me-1"></i>
-            Barbeiro selecionado: <strong>{barbers.find(b => b._id === selectedBarber)?.nome}</strong>
+            <strong>Barbeiro:</strong> {barbers.find(b => b._id === selectedBarber)?.nome} | 
+            <i className="bi bi-clock ms-2 me-1"></i>
+            <strong>Horário:</strong> {selectedTime}
           </small>
         </div>
       )}

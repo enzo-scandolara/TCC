@@ -1,3 +1,4 @@
+// server/routes/appointmentRoutes.js - CORRIGIR ORDEM
 const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middleware/authMiddleware');
@@ -6,15 +7,19 @@ const {
   getAppointments,
   getAppointmentById,
   updateAppointment,
-  deleteAppointment
+  deleteAppointment,
+  getAvailableSlots
 } = require('../controllers/appointmentController');
+
+
+router.get('/horarios-disponiveis', authMiddleware, getAvailableSlots); // ← PRIMEIRO!
 
 // Rotas dos agendamentos. O próprio nome do controller que ela usa diz sua função
 // mais caso vocês se confundam, sugiro comentar as rotas igual os controllers.
 
 router.post('/', authMiddleware, createAppointment);
 router.get('/', authMiddleware, getAppointments);
-router.get('/:id', authMiddleware, getAppointmentById);
+router.get('/:id', authMiddleware, getAppointmentById); // ← :id DEPOIS das rotas específicas
 router.put('/:id', authMiddleware, updateAppointment);
 router.delete('/:id', authMiddleware, deleteAppointment);
 

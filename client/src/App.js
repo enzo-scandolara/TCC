@@ -8,7 +8,6 @@ import Register from './pages/Register';
 import NewAppointment from './pages/NewAppointment';
 import PendingAppointments from './pages/PendingAppointments';
 import CompletedAppointments from './pages/CompletedAppointments';
-import EditAppointment from './pages/EditAppointment';
 import ServiceManagement from './pages/admin/ServiceManagement'; 
 import PrivateRoute from './components/PrivateRoute';
 import EmployeeManagement from './pages/admin/EmployeeManagement';
@@ -43,7 +42,7 @@ export default function App() {
             </Layout>
           } />
           
-          <Route path="/agendamentos/concluidos" element={
+          <Route path="/agendamentos/historico" element={
             <Layout>
               <PrivateRoute>
                 <CompletedAppointments />
@@ -51,13 +50,6 @@ export default function App() {
             </Layout>
           } />
           
-          <Route path="/agendamentos/editar/:id" element={
-            <Layout>
-              <PrivateRoute>
-                <EditAppointment />
-              </PrivateRoute>
-            </Layout>
-          } />
           
           <Route path="/admin/servicos" element={
             <Layout>

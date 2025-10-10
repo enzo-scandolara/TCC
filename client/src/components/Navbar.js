@@ -5,7 +5,7 @@ import styles from './Navbar.module.css';
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false); // ⚠️ NOVO STATE
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { user, isAdmin, isFuncionario, isCliente, logout } = useAuth();
 
   const handleLogout = () => {
@@ -121,13 +121,13 @@ const Navbar = () => {
               </li>
               <li className={styles.navItem}>
                 <NavLink 
-                  to="/agendamentos/concluidos"
+                  to="/agendamentos/historico" 
                   className={({ isActive }) => 
                     isActive ? `${styles.navLink} ${styles.active}` : styles.navLink
                   }
                 >
                   <i className={`bi bi-check-circle ${styles.icon}`}></i>
-                  Concluídos
+                  Histórico 
                 </NavLink>
               </li>
             </>
@@ -152,7 +152,6 @@ const Navbar = () => {
                   <div className={styles.dropdownMenu}>
                     <div className={styles.userInfo}>
                       <div className={styles.userHeader}>
-            
                         <div className={styles.userDetails}>
                           <strong>{user.nome}</strong>
                           <small>{user.tipo}</small>
