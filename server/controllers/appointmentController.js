@@ -76,7 +76,7 @@ const getEmployeeAppointments = async (req, res) => {
   }
 };
 
-// ATUALIZAR STATUS DO AGENDAMENTO
+// ATUALIZAR STATUS DO AGENDAMENTO - CORRIGIDO
 const updateAppointmentStatus = async (req, res) => {
   try {
     const { status, notes } = req.body;
@@ -97,9 +97,9 @@ const updateAppointmentStatus = async (req, res) => {
       });
     }
 
+    // ✅ STATUS SIMPLIFICADOS: APENAS pendente → concluído → cancelado
     const validTransitions = {
-      'pendente': ['confirmado', 'concluído', 'cancelado'],
-      'confirmado': ['concluído', 'cancelado'],
+      'pendente': ['concluído', 'cancelado'], // ✅ REMOVIDO 'confirmado'
       'concluído': [],
       'cancelado': []
     };
@@ -180,7 +180,7 @@ const getAvailableSlots = async (req, res) => {
           $gte: startOfDay,
           $lte: endOfDay
         },
-        status: { $in: ['pendente', 'confirmado'] }
+        status: { $in: ['pendente', 'concluído'] } // ✅ REMOVIDO 'confirmado'
       }).populate('service', 'duracao');
 
       // Cria um mapa de slots ocupados (30 min cada)
@@ -316,7 +316,7 @@ const createAppointment = async (req, res) => {
           $lt: slotEnd,
           $gte: currentSlot
         },
-        status: { $in: ['pendente', 'confirmado'] }
+        status: { $in: ['pendente', 'concluído'] } // ✅ REMOVIDO 'confirmado'
       });
 
       if (conflictingAppointment) {
@@ -363,7 +363,7 @@ const createAppointment = async (req, res) => {
       barber,
       date: appointmentDate,
       notes: notes || `Serviço: ${serviceData.nome} (${serviceData.duracao}min)`,
-      status: 'pendente'
+      status: 'pendente' // ✅ SEMPRE COMEÇA COMO 'pendente'
     });
 
     await appointment.save();
@@ -500,7 +500,7 @@ const deleteAppointment = async (req, res) => {
   }
 };
 
-// ESTATÍSTICAS DO FUNCIONÁRIO
+// ESTATÍSTICAS DO FUNCIONÁRIO - CORRIGIDO
 const getEmployeeStats = async (req, res) => {
   try {
     const employeeId = req.userId;
@@ -524,13 +524,13 @@ const getEmployeeStats = async (req, res) => {
 
     console.log('📋 Agendamentos encontrados:', appointments.length);
 
-    // Calcular estatísticas
+    // ✅ CALCULAR ESTATÍSTICAS CORRETAS - SEM 'confirmado'
     const stats = {
       total: appointments.length,
       pending: appointments.filter(a => a.status === 'pendente').length,
-      confirmed: appointments.filter(a => a.status === 'confirmado').length,
       completed: appointments.filter(a => a.status === 'concluído').length,
       cancelled: appointments.filter(a => a.status === 'cancelado').length
+      // ✅ REMOVIDO: confirmed
     };
 
     console.log('✅ Stats calculados:', stats);

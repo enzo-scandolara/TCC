@@ -8,13 +8,6 @@ import './EmployeeDashboard.css';
 const EmployeeDashboard = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // ✅ FUNÇÃO SEGURA COM DEBOUNCE
-  const handleStatusUpdate = () => {
-    console.log('🔄 EmployeeDashboard: Atualização segura solicitada');
-    // Debounce natural - não atualiza freneticamente
-    setRefreshTrigger(prev => prev + 1);
-  };
-
   console.log('🔄 EmployeeDashboard Render - refreshTrigger:', refreshTrigger);
 
   return (
@@ -30,8 +23,9 @@ const EmployeeDashboard = () => {
         </div>
       </div>
 
-      <ScheduleStatus refreshTrigger={refreshTrigger} onUpdate={handleStatusUpdate} />
-      <CalendarView refreshTrigger={refreshTrigger} onUpdate={handleStatusUpdate} />
+      {/* ✅ SEM onUpdate - evita loops */}
+      <ScheduleStatus refreshTrigger={refreshTrigger} />
+      <CalendarView refreshTrigger={refreshTrigger} />
     </Container>
   );
 };

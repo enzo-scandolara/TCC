@@ -1,4 +1,4 @@
-// client/src/pages/employee/components/CalendarView.js
+// client/src/pages/employee/components/CalendarView.js - VERSÃO CORRIGIDA
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -29,7 +29,7 @@ import {
 import axios from 'axios';
 import './CalendarView.css';
 
-const CalendarView = ({ refreshTrigger, onUpdate }) => {
+const CalendarView = ({ refreshTrigger }) => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -41,9 +41,8 @@ const CalendarView = ({ refreshTrigger, onUpdate }) => {
   
   const currentDateRangeRef = useRef(null);
   const isMountedRef = useRef(true);
-  const lastUpdateRef = useRef(0); // ✅ ANTI-LOOP
 
-  // ✅ FUNÇÃO PARA ABREVIAR NOME DO SERVIÇO
+  // ✅ FUNÇÃO SIMPLES PARA ABREVIAR SERVIÇO
   const getServiceAbbreviation = (serviceName) => {
     if (!serviceName) return 'Serviço';
     
@@ -86,7 +85,7 @@ const CalendarView = ({ refreshTrigger, onUpdate }) => {
         const startDate = new Date(appointment.date);
         const endDate = new Date(startDate.getTime() + (appointment.service?.duracao || 30) * 60000);
         
-        // ✅ SERVIÇO ABREVIADO
+        // ✅ SERVIÇO SIMPLES
         const serviceAbbr = getServiceAbbreviation(appointment.service?.nome);
         const eventTitle = serviceAbbr;
         
@@ -125,38 +124,34 @@ const CalendarView = ({ refreshTrigger, onUpdate }) => {
   const getEventColor = (status) => {
     const colors = {
       'pendente': '#ffc107',
-      'confirmado': '#28a745',
-      'concluído': '#6c757d',
+      'concluído': '#28a745',
       'cancelado': '#dc3545'
     };
     return colors[status] || '#007bff';
   };
 
-  // ✅ FUNÇÃO CORRIGIDA - SEM LOOP
+  // ✅ FUNÇÃO CORRIGIDA: updateAppointmentStatus
   const updateAppointmentStatus = async (newStatus) => {
     if (!selectedEvent) return;
-    
-    // ✅ ANTI-LOOP: Verifica se já atualizou recentemente
-    const now = Date.now();
-    if (now - lastUpdateRef.current < 2000) { // 2 segundos de debounce
-      console.log('🚫 CalendarView: Update muito rápido, ignorando...');
-      setShowModal(false);
-      return;
-    }
-    
-    lastUpdateRef.current = now;
     
     try {
       setUpdatingStatus(true);
       setUpdateError('');
       
+      console.log('🔧 Atualizando status para:', newStatus);
+      
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:7777/api/agendamentos/${selectedEvent.id}/status`, 
+      const response = await axios.put(`http://localhost:7777/api/agendamentos/${selectedEvent.id}/status`, 
         { status: newStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { 
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 8000
+        }
       );
 
-      // ✅ ATUALIZA O EVENTO LOCALMENTE
+      console.log('✅ Status atualizado com sucesso:', response.data);
+
+      // ✅ ATUALIZA LOCALMENTE
       setEvents(prevEvents => 
         prevEvents.map(event => 
           event.id === selectedEvent.id 
@@ -170,20 +165,26 @@ const CalendarView = ({ refreshTrigger, onUpdate }) => {
         )
       );
 
-      // ✅ FECHA MODAL PRIMEIRO
+      // ✅ FECHA MODAL
       setShowModal(false);
       
-      // ✅ ATUALIZAÇÃO SEGURA: Espera 1s antes de notificar
+      // ✅ ATUALIZAÇÃO MANUAL SEM LOOP
       setTimeout(() => {
-        if (onUpdate && isMountedRef.current) {
-          console.log('🔄 CalendarView: Notificando atualização SEGURA');
-          onUpdate();
+        if (currentDateRangeRef.current && isMountedRef.current) {
+          console.log('🔄 CalendarView: Recarregando dados após atualização');
+          fetchAppointments(
+            currentDateRangeRef.current.start, 
+            currentDateRangeRef.current.end, 
+            true
+          );
         }
       }, 1000);
 
     } catch (err) {
       console.error('❌ Erro ao atualizar status:', err);
-      setUpdateError('Erro ao atualizar agendamento');
+      console.error('❌ Response data:', err.response?.data);
+      setUpdateError(err.response?.data?.mensagem || 'Erro ao atualizar agendamento');
+    } finally {
       setUpdatingStatus(false);
     }
   };
@@ -204,7 +205,6 @@ const CalendarView = ({ refreshTrigger, onUpdate }) => {
 
   useEffect(() => {
     if (refreshTrigger > 0 && currentDateRangeRef.current) {
-      console.log('🔄 CalendarView: Refresh trigger recebido', refreshTrigger);
       fetchAppointments(
         currentDateRangeRef.current.start, 
         currentDateRangeRef.current.end, 
@@ -256,7 +256,6 @@ const CalendarView = ({ refreshTrigger, onUpdate }) => {
   const getStatusBadge = (status) => {
     const statusConfig = {
       'pendente': { variant: 'warning', text: 'Pendente', icon: <FaClock /> },
-      'confirmado': { variant: 'success', text: 'Confirmado', icon: <FaCheckCircle /> },
       'concluído': { variant: 'secondary', text: 'Concluído', icon: <FaCheckCircle /> },
       'cancelado': { variant: 'danger', text: 'Cancelado', icon: <FaTimesCircle /> }
     };
@@ -427,64 +426,65 @@ const CalendarView = ({ refreshTrigger, onUpdate }) => {
           )}
         </Modal.Body>
         
-        <Modal.Footer className="bg-dark">
-          {updateError && (
-            <Alert variant="danger" className="w-100 mb-2">
-              {updateError}
-            </Alert>
-          )}
-          
-          <Button 
-            variant="outline-light" 
-            onClick={() => setShowModal(false)}
-            disabled={updatingStatus}
-          >
-            Fechar
-          </Button>
-          
-          {/* ✅ BOTÕES SIMPLES */}
-          {selectedEvent?.status === 'pendente' && (
-            <Button 
-              variant="success" 
-              onClick={() => updateAppointmentStatus('confirmado')}
-              disabled={updatingStatus}
-            >
-              {updatingStatus ? (
-                <>
-                  <Spinner animation="border" size="sm" className="me-1" />
-                  Atualizando...
-                </>
-              ) : (
-                <>
-                  <FaCheckCircle className="me-1" />
-                  Confirmar
-                </>
-              )}
-            </Button>
-          )}
-          
-          {selectedEvent?.status === 'confirmado' && (
-            <Button 
-              variant="success" 
-              onClick={() => updateAppointmentStatus('concluído')}
-              disabled={updatingStatus}
-            >
-              <FaCheck className="me-1" />
-              Concluir
-            </Button>
-          )}
-          
-          {(selectedEvent?.status === 'pendente' || selectedEvent?.status === 'confirmado') && (
-            <Button 
-              variant="outline-danger" 
-              onClick={() => updateAppointmentStatus('cancelado')}
-              disabled={updatingStatus}
-            >
-              <FaBan className="me-1" />
-              Cancelar
-            </Button>
-          )}
-        </Modal.Footer>
+       <Modal.Footer className="bg-dark">
+  {updateError && (
+    <Alert variant="danger" className="w-100 mb-2">
+      {updateError}
+    </Alert>
+  )}
+  
+  <Button 
+    variant="outline-light" 
+    onClick={() => setShowModal(false)}
+    disabled={updatingStatus}
+  >
+    Fechar
+  </Button>
+  
+  {/* ✅ BOTÕES SIMPLES: APENAS CONCLUIR E CANCELAR */}
+  {selectedEvent?.status === 'pendente' && (
+    <>
+      <Button 
+        variant="success" 
+        onClick={() => updateAppointmentStatus('concluído')}
+        disabled={updatingStatus}
+      >
+        {updatingStatus ? (
+          <>
+            <Spinner animation="border" size="sm" className="me-1" />
+            Atualizando...
+          </>
+        ) : (
+          <>
+            <FaCheck className="me-1" />
+            Marcar como Concluído
+          </>
+        )}
+      </Button>
+      
+      <Button 
+        variant="outline-danger" 
+        onClick={() => updateAppointmentStatus('cancelado')}
+        disabled={updatingStatus}
+      >
+        <FaBan className="me-1" />
+        Cancelar
+      </Button>
+    </>
+  )}
+  
+  {/* ✅ REABRIR SE ESTIVER CANCELADO */}
+  {selectedEvent?.status === 'cancelado' && (
+    <Button 
+      variant="warning" 
+      onClick={() => updateAppointmentStatus('pendente')}
+      disabled={updatingStatus}
+    >
+      <FaClock className="me-1" />
+      Reabrir Agendamento
+    </Button>
+  )}
+</Modal.Footer>
       </Modal>
     </div>
   );
