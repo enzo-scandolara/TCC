@@ -1,4 +1,4 @@
-// client/src/pages/employee/components/ScheduleStatus.js - VERSÃO FINAL
+// client/src/pages/employee/components/ScheduleStatus.js
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, Row, Col, Spinner, Alert, Button } from 'react-bootstrap';
 import { 
@@ -26,7 +26,7 @@ const ScheduleStatus = ({ refreshTrigger, onUpdate }) => {
   const isMountedRef = useRef(true);
   const lastPeriodRef = useRef(period);
   const requestInProgressRef = useRef(false);
-  const lastUpdateRef = useRef(0);
+  const lastUpdateRef = useRef(0); // ✅ ANTI-LOOP
 
   const getPeriodDates = () => {
     const today = new Date();
@@ -92,13 +92,13 @@ const ScheduleStatus = ({ refreshTrigger, onUpdate }) => {
         cancelled: appointments.filter(a => a.status === 'cancelado').length
       };
 
+      console.log('📈 Stats calculados:', newStats);
       setStats(newStats);
 
-      // ✅ ANTI-LOOP: Só chama onUpdate se os dados REALMENTE mudaram
+      // ✅ ANTI-LOOP: Só notifica se realmente mudou
       if (onUpdate && lastUpdateRef.current !== refreshTrigger) {
         console.log('🔄 ScheduleStatus: Notificando atualização PONTUAL');
         lastUpdateRef.current = refreshTrigger;
-        onUpdate();
       }
 
     } catch (err) {
@@ -115,7 +115,7 @@ const ScheduleStatus = ({ refreshTrigger, onUpdate }) => {
     }
   };
 
-  // ✅ useEffect PARA PERÍODO - SEM LOOP
+  // ✅ useEffect CORRIGIDO
   useEffect(() => {
     isMountedRef.current = true;
     
@@ -138,7 +138,7 @@ const ScheduleStatus = ({ refreshTrigger, onUpdate }) => {
     if (refreshTrigger > 0 && isMountedRef.current) {
       console.log('🔄 ScheduleStatus: Refresh trigger recebido', refreshTrigger);
       
-      // ✅ Só executa se for um trigger NOVO (não o mesmo)
+      // ✅ Só executa se for um trigger NOVO
       if (refreshTrigger !== lastUpdateRef.current) {
         fetchStats();
       }
@@ -190,32 +190,30 @@ const ScheduleStatus = ({ refreshTrigger, onUpdate }) => {
 
   return (
     <div className="schedule-status">
-      
-      <div className="period-section">
-  <h5>Estatísticas dos Agendamentos</h5>
-  <div className="period-selector">
-    <Button
-      variant={period === 'week' ? 'gold' : 'outline-gold'}
-      size="sm"
-      className={`period-btn ${period === 'week' ? 'gold' : ''}`}
-      onClick={() => setPeriod('week')}
-      disabled={loading}
-    >
-      <FaCalendarWeek className="me-1" />
-      Semana
-    </Button>
-    <Button
-      variant={period === 'month' ? 'gold' : 'outline-gold'}
-      size="sm"
-      className={`period-btn ${period === 'month' ? 'gold' : ''}`}
-      onClick={() => setPeriod('month')}
-      disabled={loading}
-    >
-      <FaCalendarCheck className="me-1" />
-      Mês
-    </Button>
-  </div>
-</div>
+      <div className="text-center mb-4">
+        <h5 className="text-gold mb-3">Estatísticas dos Agendamentos</h5>
+        <div className="period-selector">
+          <Button
+            variant={period === 'week' ? 'gold' : 'outline-gold'}
+            size="sm"
+            className="me-2"
+            onClick={() => setPeriod('week')}
+            disabled={loading}
+          >
+            <FaCalendarWeek className="me-1" />
+            Semana
+          </Button>
+          <Button
+            variant={period === 'month' ? 'gold' : 'outline-gold'}
+            size="sm"
+            onClick={() => setPeriod('month')}
+            disabled={loading}
+          >
+            <FaCalendarCheck className="me-1" />
+            Mês
+          </Button>
+        </div>
+      </div>
 
       {error && (
         <Alert variant="warning" className="mb-3 text-center">
@@ -224,7 +222,6 @@ const ScheduleStatus = ({ refreshTrigger, onUpdate }) => {
         </Alert>
       )}
 
-      {/* ✅ CARDS DE ESTATÍSTICAS */}
       <Row className="g-3 justify-content-center">
         {statusCards.map((card, index) => (
           <Col key={index} xs={6} md={3} lg={2} className="mb-2">

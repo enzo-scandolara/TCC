@@ -157,7 +157,7 @@ const NewAppointment = () => {
                       className="form-control form-control-lg"
                       value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
-                      min={getMinDate()} // ✅ IMPEDIR DATAS PASSADAS
+                      min={getMinDate()}
                       required
                     />
                   </div>
@@ -201,7 +201,7 @@ const NewAppointment = () => {
                         R$ {getSelectedServiceData()?.preco}<br/>
                         {new Date(selectedDate).toLocaleDateString('pt-BR')}<br/>
                         {selectedTime}<br/>
-                        {calculateEndTime(selectedTime, getSelectedServiceData()?.duracao)} {/* ✅ HORÁRIO DE TÉRMINO CALCULADO */}
+                        {calculateEndTime(selectedTime, getSelectedServiceData()?.duracao)}
                       </div>
                     </div>
                   </div>

@@ -1,3 +1,4 @@
+// server/routes/agendamentos.js
 const express = require('express');
 const router = express.Router();
 const { authMiddleware, funcionarioOuAdmin } = require('../middleware/authMiddleware');
@@ -10,7 +11,7 @@ const {
   getAvailableSlots,
   getEmployeeAppointments,
   updateAppointmentStatus,
-  getEmployeeStats // ✅ JÁ ESTÁ IMPORTADO
+  getEmployeeStats
 } = require('../controllers/appointmentController');
 
 router.get('/health', (req, res) => {
@@ -31,7 +32,7 @@ router.delete('/:id', authMiddleware, deleteAppointment);
 
 // ROTAS DO FUNCIONÁRIO
 router.get('/employee/my-appointments', authMiddleware, funcionarioOuAdmin, getEmployeeAppointments);
-router.get('/employee/stats', authMiddleware, funcionarioOuAdmin, getEmployeeStats); // ✅ NOVA ROTA
+router.get('/employee/stats', authMiddleware, funcionarioOuAdmin, getEmployeeStats);
 router.put('/:id/status', authMiddleware, funcionarioOuAdmin, updateAppointmentStatus);
 
 module.exports = router;

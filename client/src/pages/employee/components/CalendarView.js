@@ -1,4 +1,4 @@
-// client/src/pages/employee/components/CalendarView.js - VERSÃO ÍCONES HARMONIZADOS
+// client/src/pages/employee/components/CalendarView.js
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -24,9 +24,7 @@ import {
   FaPhone,
   FaMoneyBill,
   FaCheck,
-  FaBan,
-  FaCalendarAlt,
-  FaInfoCircle
+  FaBan
 } from 'react-icons/fa';
 import axios from 'axios';
 import './CalendarView.css';
@@ -43,8 +41,9 @@ const CalendarView = ({ refreshTrigger, onUpdate }) => {
   
   const currentDateRangeRef = useRef(null);
   const isMountedRef = useRef(true);
+  const lastUpdateRef = useRef(0); // ✅ ANTI-LOOP
 
-  // ✅ FUNÇÃO SIMPLES PARA ABREVIAR SERVIÇO
+  // ✅ FUNÇÃO PARA ABREVIAR NOME DO SERVIÇO
   const getServiceAbbreviation = (serviceName) => {
     if (!serviceName) return 'Serviço';
     
@@ -87,7 +86,7 @@ const CalendarView = ({ refreshTrigger, onUpdate }) => {
         const startDate = new Date(appointment.date);
         const endDate = new Date(startDate.getTime() + (appointment.service?.duracao || 30) * 60000);
         
-        // ✅ SERVIÇO SIMPLES
+        // ✅ SERVIÇO ABREVIADO
         const serviceAbbr = getServiceAbbreviation(appointment.service?.nome);
         const eventTitle = serviceAbbr;
         
@@ -133,9 +132,19 @@ const CalendarView = ({ refreshTrigger, onUpdate }) => {
     return colors[status] || '#007bff';
   };
 
-  // ✅ FUNÇÃO SIMPLES PARA ATUALIZAR STATUS
+  // ✅ FUNÇÃO CORRIGIDA - SEM LOOP
   const updateAppointmentStatus = async (newStatus) => {
     if (!selectedEvent) return;
+    
+    // ✅ ANTI-LOOP: Verifica se já atualizou recentemente
+    const now = Date.now();
+    if (now - lastUpdateRef.current < 2000) { // 2 segundos de debounce
+      console.log('🚫 CalendarView: Update muito rápido, ignorando...');
+      setShowModal(false);
+      return;
+    }
+    
+    lastUpdateRef.current = now;
     
     try {
       setUpdatingStatus(true);
@@ -147,7 +156,7 @@ const CalendarView = ({ refreshTrigger, onUpdate }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // ✅ ATUALIZA LOCALMENTE
+      // ✅ ATUALIZA O EVENTO LOCALMENTE
       setEvents(prevEvents => 
         prevEvents.map(event => 
           event.id === selectedEvent.id 
@@ -161,19 +170,20 @@ const CalendarView = ({ refreshTrigger, onUpdate }) => {
         )
       );
 
-      // ✅ FECHA MODAL
+      // ✅ FECHA MODAL PRIMEIRO
       setShowModal(false);
       
-      // ✅ DISPARA ATUALIZAÇÃO DAS ESTATÍSTICAS
-      if (onUpdate) {
-        console.log('🔄 CalendarView: Disparando atualização das estatísticas');
-        onUpdate();
-      }
+      // ✅ ATUALIZAÇÃO SEGURA: Espera 1s antes de notificar
+      setTimeout(() => {
+        if (onUpdate && isMountedRef.current) {
+          console.log('🔄 CalendarView: Notificando atualização SEGURA');
+          onUpdate();
+        }
+      }, 1000);
 
     } catch (err) {
       console.error('❌ Erro ao atualizar status:', err);
       setUpdateError('Erro ao atualizar agendamento');
-    } finally {
       setUpdatingStatus(false);
     }
   };
@@ -194,6 +204,7 @@ const CalendarView = ({ refreshTrigger, onUpdate }) => {
 
   useEffect(() => {
     if (refreshTrigger > 0 && currentDateRangeRef.current) {
+      console.log('🔄 CalendarView: Refresh trigger recebido', refreshTrigger);
       fetchAppointments(
         currentDateRangeRef.current.start, 
         currentDateRangeRef.current.end, 
@@ -334,7 +345,7 @@ const CalendarView = ({ refreshTrigger, onUpdate }) => {
       >
         <Modal.Header closeButton className="bg-dark text-light">
           <Modal.Title>
-            <FaInfoCircle className="me-2" />
+            <FaUser className="me-2" />
             Detalhes do Agendamento
           </Modal.Title>
         </Modal.Header>
@@ -342,7 +353,6 @@ const CalendarView = ({ refreshTrigger, onUpdate }) => {
         <Modal.Body className="bg-dark text-light">
           {selectedEvent && (
             <div className="appointment-details">
-              {/* ✅ SEÇÃO 1 - CLIENTE */}
               <div className="detail-section">
                 <h6 className="text-gold">
                   <FaUser className="me-2" />
@@ -354,16 +364,15 @@ const CalendarView = ({ refreshTrigger, onUpdate }) => {
                     <p><strong>Email:</strong> {selectedEvent.client?.email || 'Não informado'}</p>
                   </div>
                   <div className="col-md-6">
-                    <p><strong>Telefone:</strong> <FaPhone className="me-1" /> {selectedEvent.client?.telefone || 'Não informado'}</p>
+                    <p><strong>Telefone:</strong> {selectedEvent.client?.telefone || 'Não informado'}</p>
                   </div>
                 </div>
               </div>
 
-              {/* ✅ SEÇÃO 2 - SERVIÇO */}
               <div className="detail-section">
                 <h6 className="text-gold">
                   <FaCut className="me-2" />
-                  Detalhes do Serviço
+                  Serviço
                 </h6>
                 <div className="row">
                   <div className="col-md-6">
@@ -377,11 +386,10 @@ const CalendarView = ({ refreshTrigger, onUpdate }) => {
                 </div>
               </div>
 
-              {/* ✅ SEÇÃO 3 - HORÁRIO */}
               <div className="detail-section">
                 <h6 className="text-gold">
-                  <FaCalendarAlt className="me-2" />
-                  Horário Agendado
+                  <FaClock className="me-2" />
+                  Horário do Agendamento
                 </h6>
                 <div className="row">
                   <div className="col-md-6">
@@ -399,7 +407,6 @@ const CalendarView = ({ refreshTrigger, onUpdate }) => {
                 </div>
               </div>
 
-              {/* ✅ SEÇÃO 4 - STATUS */}
               <div className="detail-section">
                 <h6 className="text-gold">
                   <FaCheckCircle className="me-2" />
@@ -435,9 +442,7 @@ const CalendarView = ({ refreshTrigger, onUpdate }) => {
             Fechar
           </Button>
           
-          {/* ✅ BOTÕES CONTEXTUAIS - SEGUINDO AS REGRAS DO BACKEND */}
-          
-          {/* CONFIRMAR - só aparece se estiver pendente */}
+          {/* ✅ BOTÕES SIMPLES */}
           {selectedEvent?.status === 'pendente' && (
             <Button 
               variant="success" 
@@ -458,7 +463,6 @@ const CalendarView = ({ refreshTrigger, onUpdate }) => {
             </Button>
           )}
           
-          {/* CONCLUIR - só aparece se estiver confirmado */}
           {selectedEvent?.status === 'confirmado' && (
             <Button 
               variant="success" 
@@ -470,7 +474,6 @@ const CalendarView = ({ refreshTrigger, onUpdate }) => {
             </Button>
           )}
           
-          {/* CANCELAR - aparece para pendente e confirmado */}
           {(selectedEvent?.status === 'pendente' || selectedEvent?.status === 'confirmado') && (
             <Button 
               variant="outline-danger" 

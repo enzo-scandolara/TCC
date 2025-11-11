@@ -1,3 +1,4 @@
+// server/models/Service.js
 const mongoose = require('mongoose');
 
 const serviceSchema = new mongoose.Schema({
@@ -11,10 +12,10 @@ const serviceSchema = new mongoose.Schema({
     trim: true
   },
   duracao: {
-    type: Number, // em minutos
+    type: Number,
     required: true,
-    min: 15,
-    max: 240 // 4 horas máximo
+    enum: [30, 60], // ✅ APENAS 30 OU 60 MINUTOS
+    default: 30
   },
   preco: {
     type: Number,
@@ -23,8 +24,7 @@ const serviceSchema = new mongoose.Schema({
   },
   categoria: {
     type: String,
-    enum: ['Corte', 'Barba', 'Sobrancelha', 'Combo', 'Outros'],
-    required: true
+    default: 'Geral'
   },
   ativo: {
     type: Boolean,

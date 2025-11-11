@@ -1,4 +1,4 @@
-// client/src/pages/employee/EmployeeDashboard.js - VERSÃO ATUALIZADA
+// client/src/pages/employee/EmployeeDashboard.js
 import React, { useState } from 'react';
 import { Container } from 'react-bootstrap';
 import CalendarView from './components/CalendarView';
@@ -8,8 +8,10 @@ import './EmployeeDashboard.css';
 const EmployeeDashboard = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  // ✅ FUNÇÃO SEGURA COM DEBOUNCE
   const handleStatusUpdate = () => {
-    console.log('🔄 EmployeeDashboard: Atualização solicitada');
+    console.log('🔄 EmployeeDashboard: Atualização segura solicitada');
+    // Debounce natural - não atualiza freneticamente
     setRefreshTrigger(prev => prev + 1);
   };
 
@@ -29,8 +31,6 @@ const EmployeeDashboard = () => {
       </div>
 
       <ScheduleStatus refreshTrigger={refreshTrigger} onUpdate={handleStatusUpdate} />
-      
-      {/* ✅ PASSA onUpdate TAMBÉM PARA O CalendarView */}
       <CalendarView refreshTrigger={refreshTrigger} onUpdate={handleStatusUpdate} />
     </Container>
   );

@@ -8,7 +8,7 @@ const BarberSelector = ({ selectedDate, selectedService, onBarberSelect, onTimeS
   const [selectedBarber, setSelectedBarber] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
 
-  // Buscar barbeiros e horários disponíveis
+  // ✅ SIMPLES: Buscar horários disponíveis
   const fetchAvailableData = useCallback(async () => {
     if (!selectedDate || !selectedService) {
       setBarbers([]);
@@ -24,18 +24,10 @@ const BarberSelector = ({ selectedDate, selectedService, onBarberSelect, onTimeS
     setError('');
 
     try {
-      // Buscar dados do serviço para obter duração
-      const serviceResponse = await fetch(`http://localhost:7777/api/services/${selectedService}`);
-      const serviceData = await serviceResponse.json();
-
-      if (!serviceResponse.ok) {
-        throw new Error('Erro ao buscar dados do serviço');
-      }
-
-      // Buscar barbeiros e horários disponíveis
       const token = localStorage.getItem('token');
+      
       const response = await fetch(
-        `http://localhost:7777/api/agendamentos/horarios-disponiveis?date=${selectedDate}&serviceDuration=${serviceData.duracao}`,
+        `http://localhost:7777/api/agendamentos/horarios-disponiveis?date=${selectedDate}&serviceId=${selectedService}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -55,7 +47,8 @@ const BarberSelector = ({ selectedDate, selectedService, onBarberSelect, onTimeS
         onTimeSelect('');
         
       } else {
-        setError('Erro ao buscar horários disponíveis');
+        const errorData = await response.json();
+        setError(errorData.mensagem || 'Erro ao buscar horários disponíveis');
         setBarbers([]);
         setAvailableSlots([]);
       }
@@ -69,7 +62,6 @@ const BarberSelector = ({ selectedDate, selectedService, onBarberSelect, onTimeS
     }
   }, [selectedDate, selectedService, onBarberSelect, onTimeSelect]);
 
-  // Buscar dados quando data/serviço mudar
   useEffect(() => {
     fetchAvailableData();
   }, [fetchAvailableData]);
@@ -135,7 +127,7 @@ const BarberSelector = ({ selectedDate, selectedService, onBarberSelect, onTimeS
               <div key={barber._id} className="col-12 mb-4">
                 <div className={`card ${selectedBarber === barber._id ? 'border-primary' : 'border-light'}`}>
                   <div className="card-body">
-                    {/* Cabeçalho do Barbeiro */}
+                    {/* Cabeçalho do Barbeiro - SIMPLES */}
                     <div className="form-check mb-3">
                       <input
                         className="form-check-input"
@@ -165,7 +157,7 @@ const BarberSelector = ({ selectedDate, selectedService, onBarberSelect, onTimeS
                       </label>
                     </div>
 
-                    {/* Horários Disponíveis */}
+                    {/* Horários Disponíveis - SIMPLES */}
                     {selectedBarber === barber._id && barberSlots.length > 0 && (
                       <div className="ms-4">
                         <h6 className="text-muted mb-3">

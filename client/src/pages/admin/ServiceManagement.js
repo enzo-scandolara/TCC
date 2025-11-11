@@ -19,7 +19,6 @@ const ServiceManagement = () => {
   //  DURAÇÕES FIXAS
   const duracaoOptions = [
     { value: 30, label: '30 minutos' },
-    { value: 45, label: '45 minutos' },
     { value: 60, label: '60 minutos' }
   ];
 

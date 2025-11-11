@@ -1,3 +1,4 @@
+// server/controllers/appointmentController.js
 const Appointment = require('../models/Appointment');
 const Service = require('../models/Service');
 const User = require('../models/User');
@@ -35,7 +36,7 @@ const getAppointments = async (req, res) => {
   }
 };
 
-// GET AGENDAMENTOS DO FUNCIONÁRIO - CORRIGIDO
+// GET AGENDAMENTOS DO FUNCIONÁRIO
 const getEmployeeAppointments = async (req, res) => {
   try {
     const { startDate, endDate, status } = req.query;
@@ -137,7 +138,145 @@ const updateAppointmentStatus = async (req, res) => {
   }
 };
 
-// CRIAR AGENDAMENTO
+// BUSCAR HORÁRIOS DISPONÍVEIS - CORRIGIDO
+const getAvailableSlots = async (req, res) => {
+  try {
+    const { date, serviceId } = req.query;
+    
+    if (!date || !serviceId) {
+      return res.status(400).json({ mensagem: 'Data e serviço são obrigatórios' });
+    }
+
+    const service = await Service.findById(serviceId);
+    if (!service) {
+      return res.status(400).json({ mensagem: 'Serviço não encontrado' });
+    }
+
+    const serviceDuration = service.duracao; // 30 ou 60
+    const barbers = await User.find({ 
+      tipo: 'funcionario', 
+      ativo: true 
+    });
+
+    const availableSlots = [];
+    const now = new Date();
+    const today = new Date().toISOString().split('T')[0];
+
+    // Função auxiliar para converter tempo em minutos
+    const timeToMinutes = (timeStr) => {
+      if (!timeStr) return 0;
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+
+    for (const barber of barbers) {
+      // Busca todos os agendamentos do barbeiro naquele dia
+      const startOfDay = new Date(date + 'T00:00:00');
+      const endOfDay = new Date(date + 'T23:59:59');
+      
+      const existingAppointments = await Appointment.find({
+        barber: barber._id,
+        date: {
+          $gte: startOfDay,
+          $lte: endOfDay
+        },
+        status: { $in: ['pendente', 'confirmado'] }
+      }).populate('service', 'duracao');
+
+      // Cria um mapa de slots ocupados (30 min cada)
+      const occupiedSlots = new Set();
+      
+      existingAppointments.forEach(appointment => {
+        const appointmentStart = appointment.date;
+        const appointmentDuration = appointment.service.duracao;
+        const appointmentEnd = new Date(appointmentStart.getTime() + (appointmentDuration * 60000));
+        
+        // Marca todos os slots de 30min que estão ocupados
+        let currentSlot = new Date(appointmentStart);
+        while (currentSlot < appointmentEnd) {
+          const slotTime = currentSlot.toTimeString().slice(0, 5); // "08:00"
+          occupiedSlots.add(`${barber._id}-${slotTime}`);
+          
+          // Próximo slot de 30min
+          currentSlot = new Date(currentSlot.getTime() + (30 * 60000));
+        }
+      });
+
+      // Verifica cada slot de 30min
+      for (let hour = 8; hour <= 20; hour++) {
+        for (let minute = 0; minute < 60; minute += 30) {
+          const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+          
+          // Verifica se é no passado
+          if (date === today) {
+            const slotDateTime = new Date(`${date}T${time}:00`);
+            if (slotDateTime <= now) continue;
+          }
+
+          // Verifica se tem slots consecutivos disponíveis
+          const slotsNeeded = serviceDuration / 30; // 1 ou 2
+          let allSlotsAvailable = true;
+          
+          for (let i = 0; i < slotsNeeded; i++) {
+            const slotHour = hour + Math.floor((minute + i * 30) / 60);
+            const slotMinute = (minute + i * 30) % 60;
+            const slotTime = `${slotHour.toString().padStart(2, '0')}:${slotMinute.toString().padStart(2, '0')}`;
+            
+            // Verifica se este slot está ocupado
+            if (occupiedSlots.has(`${barber._id}-${slotTime}`)) {
+              allSlotsAvailable = false;
+              break;
+            }
+            
+            // Verifica se está dentro do horário de trabalho
+            const slotStartMinutes = timeToMinutes(slotTime);
+            const slotEndMinutes = slotStartMinutes + 30;
+            
+            const workStartMinutes = timeToMinutes(barber.horarioTrabalho.inicio || '08:00');
+            const workEndMinutes = timeToMinutes(barber.horarioTrabalho.fim || '20:00');
+            const lunchStartMinutes = timeToMinutes(barber.horarioAlmoco || '12:00');
+            const lunchEndMinutes = timeToMinutes(barber.fimHorarioAlmoco || '13:00');
+            
+            const isWithinWorkHours = slotStartMinutes >= workStartMinutes && slotEndMinutes <= workEndMinutes;
+            const isNotLunchTime = !(slotStartMinutes < lunchEndMinutes && slotEndMinutes > lunchStartMinutes);
+            
+            if (!isWithinWorkHours || !isNotLunchTime) {
+              allSlotsAvailable = false;
+              break;
+            }
+          }
+
+          if (allSlotsAvailable) {
+            availableSlots.push({
+              barberId: barber._id.toString(),
+              time: time,
+              barberName: barber.nome,
+              duration: serviceDuration
+            });
+          }
+        }
+      }
+    }
+
+    res.json({
+      barbers: barbers.map(b => ({
+        _id: b._id,
+        nome: b.nome,
+        especializacoes: b.especializacoes,
+        horarioTrabalho: b.horarioTrabalho,
+        horarioAlmoco: b.horarioAlmoco,
+        fimHorarioAlmoco: b.fimHorarioAlmoco
+      })),
+      availableSlots
+    });
+
+  } catch (error) {
+    console.error('Erro ao buscar horários disponíveis:', error);
+    res.status(500).json({ mensagem: 'Erro no servidor' });
+  }
+};
+
+// CRIAR AGENDAMENTO - CORRIGIDO
 const createAppointment = async (req, res) => {
   try {
     const { service, client, barber, date, notes } = req.body;
@@ -164,21 +303,33 @@ const createAppointment = async (req, res) => {
     const appointmentDate = new Date(date);
     const appointmentEnd = new Date(appointmentDate.getTime() + (serviceData.duracao * 60000));
 
-    const conflictingAppointment = await Appointment.findOne({
-      barber: barber,
-      date: {
-        $lt: appointmentEnd,
-        $gte: appointmentDate
-      },
-      status: { $in: ['pendente', 'confirmado'] }
-    });
-
-    if (conflictingAppointment) {
-      return res.status(400).json({ 
-        mensagem: `Barbeiro já possui agendamento neste horário` 
+    // ✅ VALIDAÇÃO EXTRA: VERIFICA SE OS SLOTS CONSECUTIVOS ESTÃO LIVRES
+    const slotsNeeded = serviceData.duracao / 30;
+    let currentSlot = new Date(appointmentDate);
+    
+    for (let i = 0; i < slotsNeeded; i++) {
+      const slotEnd = new Date(currentSlot.getTime() + (30 * 60000));
+      
+      const conflictingAppointment = await Appointment.findOne({
+        barber: barber,
+        date: {
+          $lt: slotEnd,
+          $gte: currentSlot
+        },
+        status: { $in: ['pendente', 'confirmado'] }
       });
+
+      if (conflictingAppointment) {
+        return res.status(400).json({ 
+          mensagem: `Barbeiro já possui agendamento que conflita com este horário` 
+        });
+      }
+      
+      // Próximo slot
+      currentSlot = new Date(currentSlot.getTime() + (30 * 60000));
     }
 
+    // Validações de horário de trabalho
     const timeToMinutes = (timeStr) => {
       if (!timeStr) return 0;
       const [hours, minutes] = timeStr.split(':').map(Number);
@@ -211,7 +362,7 @@ const createAppointment = async (req, res) => {
       client, 
       barber,
       date: appointmentDate,
-      notes: notes || `Serviço: ${serviceData.nome}`,
+      notes: notes || `Serviço: ${serviceData.nome} (${serviceData.duracao}min)`,
       status: 'pendente'
     });
 
@@ -349,104 +500,7 @@ const deleteAppointment = async (req, res) => {
   }
 };
 
-// BUSCAR HORÁRIOS DISPONÍVEIS
-const getAvailableSlots = async (req, res) => {
-  try {
-    const { date, serviceDuration } = req.query;
-    
-    if (!date || !serviceDuration) {
-      return res.status(400).json({ mensagem: 'Data e duração do serviço são obrigatórios' });
-    }
-
-    const barbers = await User.find({ 
-      tipo: 'funcionario', 
-      ativo: true 
-    });
-
-    const serviceDurationMinutes = parseInt(serviceDuration);
-    const availableSlots = [];
-
-    const timeToMinutes = (timeStr) => {
-      if (!timeStr) return 0;
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      return hours * 60 + minutes;
-    };
-
-    const generateTimeSlots = () => {
-      const slots = [];
-      for (let hour = 8; hour <= 20; hour++) {
-        for (let minute = 0; minute < 60; minute += 30) {
-          const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-          slots.push(time);
-        }
-      }
-      return slots;
-    };
-
-    const allTimeSlots = generateTimeSlots();
-
-    for (const barber of barbers) {
-      const barberSlots = [];
-
-      for (const timeSlot of allTimeSlots) {
-        const timeMinutes = timeToMinutes(timeSlot);
-        const endTimeMinutes = timeMinutes + serviceDurationMinutes;
-
-        const workStartMinutes = timeToMinutes(barber.horarioTrabalho.inicio || '08:00');
-        const workEndMinutes = timeToMinutes(barber.horarioTrabalho.fim || '20:00');
-        const lunchStartMinutes = timeToMinutes(barber.horarioAlmoco || '12:00');
-        const lunchEndMinutes = timeToMinutes(barber.fimHorarioAlmoco || '13:00');
-
-        const isWithinWorkHours = timeMinutes >= workStartMinutes && endTimeMinutes <= workEndMinutes;
-        const isNotLunchTime = !(timeMinutes < lunchEndMinutes && endTimeMinutes > lunchStartMinutes);
-
-        if (isWithinWorkHours && isNotLunchTime) {
-          const appointmentDateTime = new Date(`${date}T${timeSlot}:00`);
-          const appointmentEndDateTime = new Date(appointmentDateTime.getTime() + (serviceDurationMinutes * 60000));
-
-          const conflictingAppointment = await Appointment.findOne({
-            barber: barber._id,
-            date: {
-              $lt: appointmentEndDateTime,
-              $gte: appointmentDateTime
-            },
-            status: { $in: ['pendente', 'confirmado'] }
-          });
-
-          if (!conflictingAppointment) {
-            barberSlots.push({
-              barberId: barber._id.toString(),
-              time: timeSlot,
-              barberName: barber.nome
-            });
-          }
-        }
-      }
-
-      if (barberSlots.length > 0) {
-        availableSlots.push(...barberSlots);
-      }
-    }
-
-    res.json({
-      barbers: barbers.map(b => ({
-        _id: b._id,
-        nome: b.nome,
-        especializacoes: b.especializacoes,
-        horarioTrabalho: b.horarioTrabalho,
-        horarioAlmoco: b.horarioAlmoco,
-        fimHorarioAlmoco: b.fimHorarioAlmoco
-      })),
-      availableSlots
-    });
-
-  } catch (error) {
-    console.error('Erro ao buscar horários disponíveis:', error);
-    res.status(500).json({ mensagem: 'Erro no servidor' });
-  }
-};
-
-// ✅ ESTATÍSTICAS DO FUNCIONÁRIO - NOVA FUNÇÃO
+// ESTATÍSTICAS DO FUNCIONÁRIO
 const getEmployeeStats = async (req, res) => {
   try {
     const employeeId = req.userId;
