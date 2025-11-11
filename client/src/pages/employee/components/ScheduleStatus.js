@@ -191,29 +191,30 @@ const ScheduleStatus = ({ refreshTrigger, onUpdate }) => {
   return (
     <div className="schedule-status">
       <div className="text-center mb-4">
-        <h5 className="text-gold mb-3">Estatísticas dos Agendamentos</h5>
-        <div className="period-selector">
-          <Button
-            variant={period === 'week' ? 'gold' : 'outline-gold'}
-            size="sm"
-            className="me-2"
-            onClick={() => setPeriod('week')}
-            disabled={loading}
-          >
-            <FaCalendarWeek className="me-1" />
-            Semana
-          </Button>
-          <Button
-            variant={period === 'month' ? 'gold' : 'outline-gold'}
-            size="sm"
-            onClick={() => setPeriod('month')}
-            disabled={loading}
-          >
-            <FaCalendarCheck className="me-1" />
-            Mês
-          </Button>
-        </div>
-      </div>
+        <h5 style={{ color: 'white', textAlign: 'center', marginBottom: '1rem' }}>
+        Estatísticas dos Agendamentos
+      </h5>
+       <div className="period-selector">
+    <Button
+      variant={period === 'week' ? 'primary' : 'outline-primary'}
+      size="sm"
+      onClick={() => setPeriod('week')}
+      disabled={loading}
+    >
+      <FaCalendarWeek className="me-1" />
+      Semana
+    </Button>
+    <Button
+      variant={period === 'month' ? 'primary' : 'outline-primary'}
+      size="sm"
+      onClick={() => setPeriod('month')}
+      disabled={loading}
+    >
+      <FaCalendarCheck className="me-1" />
+      Mês
+    </Button>
+  </div>
+</div>
 
       {error && (
         <Alert variant="warning" className="mb-3 text-center">
