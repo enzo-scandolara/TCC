@@ -1,27 +1,35 @@
-import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-export default function PrivateRoute({ children, requiredRole }) {
-  const { user, isAdmin, isLoading } = useAuth();
-  const token = localStorage.getItem('token');
+const PrivateRoute = ({ children, requiredRole }) => {
+  const { user, isLoading } = useAuth();
 
-  // Mostrar loading enquanto busca dados do usuário
   if (isLoading) {
-    return <div>Carregando...</div>;
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
+        <div className="spinner-border text-gold" role="status">
+          <span className="visually-hidden">Carregando...</span>
+        </div>
+      </div>
+    );
   }
 
-  // 1. Verifica se está logado
-  if (!token) {
-    return <Navigate to="/login" replace />;
+  if (!user) {
+    window.location.href = '/login';
+    return null;
   }
 
-  // 2. Verifica se tem o role necessária (se especificada)
-  if (requiredRole) {
-    // Admin tem acesso a tudo
-    if (!isAdmin && user?.tipo !== requiredRole) {
-      return <Navigate to="/home" replace />; //  Redireciona para home em vez de unauthorized
-    }
+  if (requiredRole && user.tipo !== requiredRole) {
+    return (
+      <div className="container mt-5">
+        <div className="alert alert-danger text-center">
+          <h4>Acesso Negado</h4>
+          <p>Você não tem permissão para acessar esta página.</p>
+        </div>
+      </div>
+    );
   }
 
   return children;
-}
+};
+
+export default PrivateRoute;

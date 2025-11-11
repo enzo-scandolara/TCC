@@ -79,11 +79,11 @@ const Navbar = () => {
             </>
           )}
 
-          {/* Links para FUNCIONÁRIOS e ADMIN */}
-          {(isFuncionario || isAdmin) && (
+          
+          {(isFuncionario ) && (
             <li className={styles.navItem}>
               <NavLink 
-                to="/agenda"
+                to="/employee/dashboard"
                 className={({ isActive }) => 
                   isActive ? `${styles.navLink} ${styles.active}` : styles.navLink
                 }

@@ -5,7 +5,7 @@ const Layout = ({ children }) => {
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundImage: "url('/images/salao.jpg')",
+      backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('/images/salao.jpg')",
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundAttachment: 'fixed',

@@ -32,20 +32,46 @@ export default function Login({ onLogin }) {
         return;
       }
 
+      // ✅ 1. SALVAR TOKEN PRIMEIRO (de forma síncrona)
       localStorage.setItem('token', data.token);
-      
+      console.log('🔐 Token salvo no login:', data.token.substring(0, 50) + '...');
+
+      // ✅ 2. BUSCAR DADOS DO USUÁRIO COM O TOKEN
       const userResponse = await fetch('http://localhost:7777/api/users/me', {
-        headers: { 'Authorization': `Bearer ${data.token}` }
+        headers: { 
+          'Authorization': `Bearer ${data.token}`,
+          'Content-Type': 'application/json'
+        }
       });
       
       if (userResponse.ok) {
         const userData = await userResponse.json();
-        login(userData);
+        console.log('👤 Dados do usuário:', userData);
+        
+        // ✅ 3. ATUALIZAR CONTEXTO DE AUTENTICAÇÃO
+        login(userData, data.token);
+        
+        // ✅ 4. CHAMAR onLogin SE EXISTIR
+        if (onLogin) {
+          onLogin(data.token, userData);
+        }
+        
+        // ✅ 5. REDIRECIONAMENTO BASEADO NO TIPO DE USUÁRIO
+        if (userData.tipo === 'funcionario') {
+          navigate('/employee/dashboard');
+        } else if (userData.tipo === 'admin') {
+          navigate('/admin/servicos');
+        } else {
+          navigate('/home');
+        }
+      } else {
+        const errorData = await userResponse.json();
+        console.error('❌ Erro no /me:', errorData);
+        setMensagem('Erro ao carregar dados do usuário');
+        setIsLoading(false);
       }
-      
-      onLogin(data.token);
-      navigate('/home');
     } catch (error) {
+      console.error('💥 Erro no login:', error);
       setMensagem('Erro na conexão com o servidor');
       setIsLoading(false);
     }
@@ -55,9 +81,9 @@ export default function Login({ onLogin }) {
     <>
       <div className={styles.loginContainer}>
         <div 
-  className={styles.loginBackground}
-  style={{ backgroundImage: "url('/images/salao.jpg')" }}
->
+          className={styles.loginBackground}
+          style={{ backgroundImage: "url('/images/salao.jpg')" }}
+        >
           <div className={styles.loginOverlay}></div>
           
           <div className={`d-flex align-items-center justify-content-center ${styles.loginContent}`}>

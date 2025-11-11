@@ -1,26 +1,37 @@
-// server/routes/appointmentRoutes.js - CORRIGIR ORDEM
 const express = require('express');
 const router = express.Router();
-const { authMiddleware } = require('../middleware/authMiddleware');
+const { authMiddleware, funcionarioOuAdmin } = require('../middleware/authMiddleware');
 const {
   createAppointment,
   getAppointments,
   getAppointmentById,
   updateAppointment,
   deleteAppointment,
-  getAvailableSlots
+  getAvailableSlots,
+  getEmployeeAppointments,
+  updateAppointmentStatus,
+  getEmployeeStats // ✅ JÁ ESTÁ IMPORTADO
 } = require('../controllers/appointmentController');
 
+router.get('/health', (req, res) => {
+  res.json({ 
+    message: 'API funcionando perfeitamente!',
+    timestamp: new Date().toISOString(),
+    status: 'online'
+  });
+});
 
-router.get('/horarios-disponiveis', authMiddleware, getAvailableSlots); // ← PRIMEIRO!
-
-// Rotas dos agendamentos. O próprio nome do controller que ela usa diz sua função
-// mais caso vocês se confundam, sugiro comentar as rotas igual os controllers.
-
+// ROTAS EXISTENTES
+router.get('/horarios-disponiveis', authMiddleware, getAvailableSlots);
 router.post('/', authMiddleware, createAppointment);
 router.get('/', authMiddleware, getAppointments);
-router.get('/:id', authMiddleware, getAppointmentById); // ← :id DEPOIS das rotas específicas
+router.get('/:id', authMiddleware, getAppointmentById);
 router.put('/:id', authMiddleware, updateAppointment);
 router.delete('/:id', authMiddleware, deleteAppointment);
+
+// ROTAS DO FUNCIONÁRIO
+router.get('/employee/my-appointments', authMiddleware, funcionarioOuAdmin, getEmployeeAppointments);
+router.get('/employee/stats', authMiddleware, funcionarioOuAdmin, getEmployeeStats); // ✅ NOVA ROTA
+router.put('/:id/status', authMiddleware, funcionarioOuAdmin, updateAppointmentStatus);
 
 module.exports = router;

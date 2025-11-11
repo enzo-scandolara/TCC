@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import BarberSelector from '../components/BarberSelector';
-import { createDateTimeString, getMinDate } from '../utils/dateUtils'; // ← IMPORTAR
+import { createDateTimeString, getMinDate, isDateTimeInPast, calculateEndTime } from '../utils/dateUtils';
 
 const NewAppointment = () => {
   const [services, setServices] = useState([]);
@@ -38,11 +38,17 @@ const NewAppointment = () => {
       return;
     }
 
+    // VALIDAR SE NÃO É NO PASSADO
+    if (isDateTimeInPast(selectedDate, selectedTime)) {
+      setMensagem('Não é possível agendar para datas/horários no passado');
+      setLoading(false);
+      return;
+    }
+
     const token = localStorage.getItem('token');
     const selectedServiceData = services.find(s => s._id === selectedService);
 
     try {
-      // ✅ USAR A FUNÇÃO UTILITÁRIA
       const dateTimeString = createDateTimeString(selectedDate, selectedTime);
       
       const response = await fetch('http://localhost:7777/api/agendamentos', {
@@ -151,7 +157,7 @@ const NewAppointment = () => {
                       className="form-control form-control-lg"
                       value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
-                      min={getMinDate()} // ✅ USAR FUNÇÃO UTILITÁRIA
+                      min={getMinDate()} // ✅ IMPEDIR DATAS PASSADAS
                       required
                     />
                   </div>
@@ -165,8 +171,16 @@ const NewAppointment = () => {
                   onTimeSelect={setSelectedTime}
                 />
 
+                {/* ✅ AVISO SE HORÁRIO FOR NO PASSADO */}
+                {selectedDate && selectedTime && isDateTimeInPast(selectedDate, selectedTime) && (
+                  <div className="alert alert-warning">
+                    <i className="bi bi-exclamation-triangle me-2"></i>
+                    Este horário já passou. Selecione um horário futuro.
+                  </div>
+                )}
+
                 {/* Resumo */}
-                {selectedService && selectedDate && selectedBarber && selectedTime && (
+                {selectedService && selectedDate && selectedBarber && selectedTime && !isDateTimeInPast(selectedDate, selectedTime) && (
                   <div className="alert alert-info border-0">
                     <h6 className="fw-bold">
                       <i className="bi bi-card-checklist me-2"></i>
@@ -178,14 +192,16 @@ const NewAppointment = () => {
                         <strong>Duração:</strong><br/>
                         <strong>Preço:</strong><br/>
                         <strong>Data:</strong><br/>
-                        <strong>Horário:</strong>
+                        <strong>Horário:</strong><br/>
+                        <strong>Término:</strong>
                       </div>
                       <div className="col-6">
                         {getSelectedServiceData()?.nome}<br/>
                         {getSelectedServiceData()?.duracao} minutos<br/>
                         R$ {getSelectedServiceData()?.preco}<br/>
                         {new Date(selectedDate).toLocaleDateString('pt-BR')}<br/>
-                        {selectedTime}
+                        {selectedTime}<br/>
+                        {calculateEndTime(selectedTime, getSelectedServiceData()?.duracao)} {/* ✅ HORÁRIO DE TÉRMINO CALCULADO */}
                       </div>
                     </div>
                   </div>
@@ -195,7 +211,7 @@ const NewAppointment = () => {
                   <button 
                     type="submit" 
                     className="btn btn-primary btn-lg px-4"
-                    disabled={loading || !selectedBarber || !selectedTime}
+                    disabled={loading || !selectedBarber || !selectedTime || isDateTimeInPast(selectedDate, selectedTime)}
                   >
                     {loading ? (
                       <>

@@ -1,0 +1,104 @@
+/* client/src/pages/employee/components/ScheduleStatus.css */
+.schedule-status {
+  margin-bottom: 2rem;
+}
+
+
+.period-section {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.period-section h5 {
+  color: white;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.period-selector {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.period-btn {
+  min-width: 120px;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  background: white !important; /* ✅ FUNDO BRANCO */
+  color: black !important; /* ✅ TEXTO PRETO */
+  border: 2px solid #d4af37 !important;
+}
+
+
+.period-btn.gold {
+  background: #d4af37 !important; /* ✅ BOTÃO ATIVO DOURADO */
+  color: black !important;
+  border-color: #d4af37 !important;
+}
+
+/* O RESTANTE PERMANECE IGUAL */
+.status-card {
+  border: none;
+  border-radius: 10px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.status-primary {
+  border-left: 4px solid #007bff;
+}
+
+.status-warning {
+  border-left: 4px solid #ffc107;
+}
+
+.status-secondary {
+  border-left: 4px solid #2b9346;
+}
+
+.status-danger {
+  border-left: 4px solid #dc3545;
+}
+
+.status-icon {
+  font-size: 1.5rem;
+  opacity: 0.8;
+}
+
+.status-value {
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin: 0;
+  color: #d4af37;
+}
+
+.status-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.status-description {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  display: block;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .period-selector {
+    gap: 0.5rem;
+  }
+  
+  .period-btn {
+    min-width: 100px;
+    font-size: 0.9rem;
+    padding: 0.4rem 0.8rem;
+  }
+}

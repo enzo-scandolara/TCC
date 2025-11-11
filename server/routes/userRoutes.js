@@ -6,7 +6,8 @@ const {
   registerUser,
   registerFuncionario,
   getFuncionarios,
-  getMe 
+  getMe,
+  debugRegister
 } = require('../controllers/userController');
 
 //  ROTAS PÚBLICAS
@@ -16,5 +17,7 @@ router.get('/funcionarios', getFuncionarios);
 // ROTAS PROTEGIDAS
 router.get('/me', authMiddleware, getMe);
 router.post('/funcionarios', authMiddleware, somenteAdmin, registerFuncionario); 
+
+router.post('/debug-register', debugRegister);
 
 module.exports = router;

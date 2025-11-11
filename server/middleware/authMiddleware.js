@@ -49,10 +49,10 @@ const somenteCliente = (req, res, next) => {
   next();
 };
 
-// Exportamos TODOS os middlewares
+
 module.exports = {
-  authMiddleware,      // ← já existia
-  somenteAdmin,        // ← novo
-  funcionarioOuAdmin,  // ← novo  
-  somenteCliente       // ← novo
+  authMiddleware,      
+  somenteAdmin,        
+  funcionarioOuAdmin,    
+  somenteCliente       
 };

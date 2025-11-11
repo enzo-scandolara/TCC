@@ -17,13 +17,10 @@ const getAppointments = async (req, res) => {
 
     // FILTRAGEM POR TIPO DE USUÁRIO 
     if (userTipo === 'cliente') {
-      // Cliente vê apenas SEUS agendamentos
       filter.client = userId;
     } else if (userTipo === 'funcionario') {
-      // Funcionário vê agendamentos atribuídos a ELE
       filter.barber = userId;
     }
-    // Admin vê TODOS os agendamentos - sem filtro adicional
 
     const appointments = await Appointment.find(filter)
       .populate('service', 'nome descricao duracao preco categoria')
@@ -38,12 +35,113 @@ const getAppointments = async (req, res) => {
   }
 };
 
+// GET AGENDAMENTOS DO FUNCIONÁRIO - CORRIGIDO
+const getEmployeeAppointments = async (req, res) => {
+  try {
+    const { startDate, endDate, status } = req.query;
+    const employeeId = req.userId;
+    
+    let query = { barber: employeeId };
+    
+    // Filtro por range de datas
+    if (startDate && endDate) {
+      query.date = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      };
+    } else {
+      // Fallback: agendamentos dos próximos 30 dias
+      const today = new Date();
+      query.date = {
+        $gte: today,
+        $lte: new Date(today.setDate(today.getDate() + 30))
+      };
+    }
+    
+    // Filtro por status se fornecido
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+
+    const appointments = await Appointment.find(query)
+      .populate('client', 'nome email telefone')
+      .populate('service', 'nome duracao preco')
+      .sort({ date: 1 });
+
+    res.json(appointments);
+  } catch (error) {
+    console.error('Erro ao buscar agendamentos do funcionário:', error);
+    res.status(500).json({ message: 'Erro ao buscar agendamentos', error: error.message });
+  }
+};
+
+// ATUALIZAR STATUS DO AGENDAMENTO
+const updateAppointmentStatus = async (req, res) => {
+  try {
+    const { status, notes } = req.body;
+    const appointmentId = req.params.id;
+    const employeeId = req.userId;
+
+    const appointment = await Appointment.findById(appointmentId)
+      .populate('service', 'nome duracao')
+      .populate('client', 'nome email');
+
+    if (!appointment) {
+      return res.status(404).json({ mensagem: 'Agendamento não encontrado' });
+    }
+
+    if (appointment.barber.toString() !== employeeId) {
+      return res.status(403).json({ 
+        mensagem: 'Acesso negado. Este agendamento não é seu.' 
+      });
+    }
+
+    const validTransitions = {
+      'pendente': ['confirmado', 'concluído', 'cancelado'],
+      'confirmado': ['concluído', 'cancelado'],
+      'concluído': [],
+      'cancelado': []
+    };
+
+    if (!validTransitions[appointment.status].includes(status)) {
+      return res.status(400).json({ 
+        mensagem: `Transição de status inválida: ${appointment.status} → ${status}` 
+      });
+    }
+
+    const updatedAppointment = await Appointment.findByIdAndUpdate(
+      appointmentId,
+      { 
+        status,
+        notes: notes || appointment.notes 
+      },
+      { new: true, runValidators: true }
+    )
+      .populate('service', 'nome descricao duracao preco categoria')
+      .populate('client', 'nome email telefone')
+      .populate('barber', 'nome email');
+
+    res.json({
+      mensagem: `Agendamento ${status} com sucesso`,
+      appointment: updatedAppointment
+    });
+
+  } catch (error) {
+    console.error('Erro ao atualizar status do agendamento:', error);
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ mensagem: 'Dados inválidos' });
+    }
+    
+    res.status(500).json({ mensagem: 'Erro no servidor' });
+  }
+};
+
 // CRIAR AGENDAMENTO
 const createAppointment = async (req, res) => {
   try {
     const { service, client, barber, date, notes } = req.body;
 
-    // ✅ VERIFICAR SE O BARBEIRO EXISTE E ESTÁ ATIVO
     const barberExists = await User.findOne({ 
       _id: barber, 
       tipo: 'funcionario', 
@@ -56,7 +154,6 @@ const createAppointment = async (req, res) => {
       });
     }
 
-    // ✅ BUSCAR DADOS DO SERVIÇO PARA SABER A DURAÇÃO
     const serviceData = await Service.findById(service);
     if (!serviceData) {
       return res.status(400).json({ 
@@ -67,7 +164,6 @@ const createAppointment = async (req, res) => {
     const appointmentDate = new Date(date);
     const appointmentEnd = new Date(appointmentDate.getTime() + (serviceData.duracao * 60000));
 
-    // ✅ VERIFICAR CONFLITO DE HORÁRIO
     const conflictingAppointment = await Appointment.findOne({
       barber: barber,
       date: {
@@ -83,7 +179,6 @@ const createAppointment = async (req, res) => {
       });
     }
 
-    // ✅ VERIFICAR HORÁRIO DE TRABALHO DO BARBEIRO
     const timeToMinutes = (timeStr) => {
       if (!timeStr) return 0;
       const [hours, minutes] = timeStr.split(':').map(Number);
@@ -99,28 +194,25 @@ const createAppointment = async (req, res) => {
     const lunchStartMinutes = timeToMinutes(barberExists.horarioAlmoco || '12:00');
     const lunchEndMinutes = timeToMinutes(barberExists.fimHorarioAlmoco || '13:00');
 
-    // Verificar se está dentro do horário de trabalho
     if (appointmentTimeMinutes < workStartMinutes || endTimeMinutes > workEndMinutes) {
       return res.status(400).json({ 
         mensagem: `Horário fora do expediente do barbeiro` 
       });
     }
 
-    // Verificar se não invade horário de almoço
     if ((appointmentTimeMinutes < lunchEndMinutes && endTimeMinutes > lunchStartMinutes)) {
       return res.status(400).json({ 
         mensagem: `Horário conflita com horário de almoço` 
       });
     }
 
-    // ✅ CRIAR AGENDAMENTO
     const appointment = new Appointment({
       service,
       client, 
       barber,
       date: appointmentDate,
       notes: notes || `Serviço: ${serviceData.nome}`,
-      status: 'pendente' // ✅ SEMPRE COMEÇA COMO PENDENTE
+      status: 'pendente'
     });
 
     await appointment.save();
@@ -156,7 +248,6 @@ const getAppointmentById = async (req, res) => {
       return res.status(404).json({ mensagem: 'Agendamento não encontrado' });
     }
 
-    // ✅ VERIFICAÇÃO SIMPLES DE PERMISSÃO
     const userId = req.userId;
     const userTipo = req.userTipo;
     
@@ -178,19 +269,17 @@ const getAppointmentById = async (req, res) => {
   }
 };
 
-// ATUALIZAR AGENDAMENTO - SIMPLIFICADO (APENAS STATUS PARA CANCELAR)
+// ATUALIZAR AGENDAMENTO 
 const updateAppointment = async (req, res) => {
   try {
-    const { status } = req.body; // ✅ APENAS STATUS (para cancelar)
+    const { status } = req.body;
 
-    // Buscar agendamento existente
     const existingAppointment = await Appointment.findById(req.params.id);
     
     if (!existingAppointment) {
       return res.status(404).json({ mensagem: 'Agendamento não encontrado' });
     }
 
-    // Verificação de permissão
     const userId = req.userId;
     const userTipo = req.userTipo;
     
@@ -205,10 +294,9 @@ const updateAppointment = async (req, res) => {
       });
     }
 
-    // ✅ APENAS PERMITIR MUDANÇA DE STATUS (cancelar)
     const appointment = await Appointment.findByIdAndUpdate(
       req.params.id,
-      { status }, // ✅ APENAS STATUS
+      { status },
       { new: true, runValidators: true }
     )
       .populate('service', 'nome descricao duracao preco categoria')
@@ -230,17 +318,15 @@ const updateAppointment = async (req, res) => {
   }
 };
 
-// DELETAR AGENDAMENTO - SIMPLIFICADO
+// DELETAR AGENDAMENTO 
 const deleteAppointment = async (req, res) => {
   try {
-    // ✅ BUSCAR AGENDAMENTO
     const appointment = await Appointment.findById(req.params.id);
     
     if (!appointment) {
       return res.status(404).json({ mensagem: 'Agendamento não encontrado' });
     }
 
-    // ✅ VERIFICAÇÃO SIMPLES DE PERMISSÃO
     const userId = req.userId;
     const userTipo = req.userTipo;
     
@@ -272,7 +358,6 @@ const getAvailableSlots = async (req, res) => {
       return res.status(400).json({ mensagem: 'Data e duração do serviço são obrigatórios' });
     }
 
-    // Buscar todos os barbeiros ativos
     const barbers = await User.find({ 
       tipo: 'funcionario', 
       ativo: true 
@@ -281,14 +366,12 @@ const getAvailableSlots = async (req, res) => {
     const serviceDurationMinutes = parseInt(serviceDuration);
     const availableSlots = [];
 
-    // Função para converter horário em minutos
     const timeToMinutes = (timeStr) => {
       if (!timeStr) return 0;
       const [hours, minutes] = timeStr.split(':').map(Number);
       return hours * 60 + minutes;
     };
 
-    // Gerar todos os horários possíveis do dia
     const generateTimeSlots = () => {
       const slots = [];
       for (let hour = 8; hour <= 20; hour++) {
@@ -302,7 +385,6 @@ const getAvailableSlots = async (req, res) => {
 
     const allTimeSlots = generateTimeSlots();
 
-    // Para cada barbeiro, verificar disponibilidade
     for (const barber of barbers) {
       const barberSlots = [];
 
@@ -310,18 +392,15 @@ const getAvailableSlots = async (req, res) => {
         const timeMinutes = timeToMinutes(timeSlot);
         const endTimeMinutes = timeMinutes + serviceDurationMinutes;
 
-        // Verificar horário de trabalho
         const workStartMinutes = timeToMinutes(barber.horarioTrabalho.inicio || '08:00');
         const workEndMinutes = timeToMinutes(barber.horarioTrabalho.fim || '20:00');
         const lunchStartMinutes = timeToMinutes(barber.horarioAlmoco || '12:00');
         const lunchEndMinutes = timeToMinutes(barber.fimHorarioAlmoco || '13:00');
 
-        // Verificar se está dentro do expediente e fora do almoço
         const isWithinWorkHours = timeMinutes >= workStartMinutes && endTimeMinutes <= workEndMinutes;
         const isNotLunchTime = !(timeMinutes < lunchEndMinutes && endTimeMinutes > lunchStartMinutes);
 
         if (isWithinWorkHours && isNotLunchTime) {
-          // Verificar se não há conflito com agendamentos existentes
           const appointmentDateTime = new Date(`${date}T${timeSlot}:00`);
           const appointmentEndDateTime = new Date(appointmentDateTime.getTime() + (serviceDurationMinutes * 60000));
 
@@ -331,7 +410,7 @@ const getAvailableSlots = async (req, res) => {
               $lt: appointmentEndDateTime,
               $gte: appointmentDateTime
             },
-            status: { $in: ['pendente'] } // ✅ APENAS VERIFICA CONFLITO COM AGENDAMENTOS PENDENTES
+            status: { $in: ['pendente', 'confirmado'] }
           });
 
           if (!conflictingAppointment) {
@@ -344,7 +423,6 @@ const getAvailableSlots = async (req, res) => {
         }
       }
 
-      // Se o barbeiro tem horários disponíveis, adicionar à lista
       if (barberSlots.length > 0) {
         availableSlots.push(...barberSlots);
       }
@@ -368,11 +446,59 @@ const getAvailableSlots = async (req, res) => {
   }
 };
 
+// ✅ ESTATÍSTICAS DO FUNCIONÁRIO - NOVA FUNÇÃO
+const getEmployeeStats = async (req, res) => {
+  try {
+    const employeeId = req.userId;
+    
+    // Data de hoje (início e fim do dia)
+    const today = new Date();
+    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+
+    console.log('📊 Buscando stats para funcionário:', employeeId);
+    console.log('📅 Período:', startOfDay, 'até', endOfDay);
+
+    // Buscar agendamentos do funcionário para hoje
+    const appointments = await Appointment.find({
+      barber: employeeId,
+      date: { 
+        $gte: startOfDay, 
+        $lte: endOfDay 
+      }
+    });
+
+    console.log('📋 Agendamentos encontrados:', appointments.length);
+
+    // Calcular estatísticas
+    const stats = {
+      total: appointments.length,
+      pending: appointments.filter(a => a.status === 'pendente').length,
+      confirmed: appointments.filter(a => a.status === 'confirmado').length,
+      completed: appointments.filter(a => a.status === 'concluído').length,
+      cancelled: appointments.filter(a => a.status === 'cancelado').length
+    };
+
+    console.log('✅ Stats calculados:', stats);
+
+    res.json(stats);
+  } catch (error) {
+    console.error('❌ Erro ao buscar estatísticas:', error);
+    res.status(500).json({ 
+      message: 'Erro ao buscar estatísticas', 
+      error: error.message 
+    });
+  }
+};
+
 module.exports = {
   createAppointment,
   getAppointments,
   getAppointmentById,
   updateAppointment,
   deleteAppointment,
-  getAvailableSlots
+  getAvailableSlots,
+  getEmployeeAppointments,
+  updateAppointmentStatus,
+  getEmployeeStats 
 };

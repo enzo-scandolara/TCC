@@ -7,6 +7,7 @@ const { JWT_SECRET } = require('../config');
 const loginUser = async (req, res) => {
   const { email, senha } = req.body;
 
+  console.log(req.body);
   try {
     const usuario = await User.findOne({ email });
 
@@ -29,7 +30,8 @@ const loginUser = async (req, res) => {
     res.json({ mensagem: 'Login bem-sucedido', token });
   } catch (erro) {
     console.error(erro);
-    res.status(500).json({ mensagem: 'Erro no servidor' }); //Preciso melhorar essa parte de erros ia ser top
+    console.log(erro);
+    res.status(500).json({ mensagem: 'Erro no servidor' });
   }
 };
 
@@ -59,15 +61,21 @@ const registerUser = async (req, res) => {
     res.status(201).json({ mensagem: 'Usuário cadastrado com sucesso' });
   } catch (erro) {
     console.error(erro);
-    res.status(500).json({ mensagem: 'Erro no servidor' }); //Preciso melhorar essa parte de erros ia ser top
+    res.status(500).json({ mensagem: 'Erro no servidor' });
   }
 };
-
 
 //REGISTRO DE FUNCIONÁRIOS (somente admin)
 const registerFuncionario = async (req, res) => {
   //VERIFICAÇÃO: Só admin pode acessar (já feita pelo middleware)
   const { nome, email, senha, especializacoes, horarioTrabalho } = req.body;
+
+// ✅ DEBUG: VER O QUE ESTÁ CHEGANDO
+  console.log('=== DEBUG REGISTER FUNCIONARIO ===');
+  console.log('req.body:', JSON.stringify(req.body, null, 2));
+  console.log('senha recebida:', senha);
+  console.log('tipo da senha:', typeof senha);
+
 
   try {
     const userExistente = await User.findOne({ email });
@@ -76,13 +84,14 @@ const registerFuncionario = async (req, res) => {
       return res.status(400).json({ mensagem: 'Usuário já cadastrado' });
     }
 
+    // ✅ CORREÇÃO: FAZER HASH DA SENHA (igual no registerUser)
     const salt = await bcrypt.genSalt(10);
     const senhaHash = await bcrypt.hash(senha, salt);
 
     const novoFuncionario = new User({
       nome,
       email,
-      senha: senhaHash,
+      senha: senhaHash, // ← AGORA COM HASH
       tipo: 'funcionario', // Especificamente como funcionário
       especializacoes: especializacoes || [],
       horarioTrabalho: horarioTrabalho || { inicio: '08:00', fim: '20:00' }
@@ -122,7 +131,8 @@ const getFuncionarios = async (req, res) => {
     res.status(500).json({ mensagem: 'Erro no servidor' });
   }
 };
-//  OBTER DADOS DO USUÁRIO LOGADO
+
+// OBTER DADOS DO USUÁRIO LOGADO
 const getMe = async (req, res) => {
   try {
     // O middleware authMiddleware já adicionou userId e userTipo no request
@@ -147,10 +157,75 @@ const getMe = async (req, res) => {
     res.status(500).json({ mensagem: 'Erro no servidor' });
   }
 };
+
+// Adicione no userController.js - TESTE CONTROLADO
+const debugRegister = async (req, res) => {
+  try {
+    console.log('=== TESTE CONTROLADO ===');
+    
+    // Dados fixos para teste
+    const testData = {
+      nome: 'Funcionario Teste',
+      email: 'funcionario@teste.com', 
+      senha: '123456',
+      tipo: 'funcionario'
+    };
+
+    console.log('1. Dados de teste:', testData);
+
+    // Verificar se usuário já existe
+    const existing = await User.findOne({ email: testData.email });
+    if (existing) {
+      await User.deleteOne({ email: testData.email });
+      console.log('2. Usuário teste anterior removido');
+    }
+
+    console.log('3. Gerando hash...');
+    const salt = await bcrypt.genSalt(10);
+    const senhaHash = await bcrypt.hash(testData.senha, salt);
+    console.log('4. Hash gerado:', senhaHash.substring(0, 20) + '...');
+
+    // Criar usuário manualmente
+    const user = new User({
+      nome: testData.nome,
+      email: testData.email,
+      senha: senhaHash,
+      tipo: testData.tipo
+    });
+
+    console.log('5. Antes do save - senha no objeto:', user.senha.substring(0, 20) + '...');
+    await user.save();
+    console.log('6. Após save');
+
+    // Verificar o que foi salvo
+    const savedUser = await User.findOne({ email: testData.email });
+    console.log('7. Usuário salvo - senha:', savedUser.senha);
+    console.log('8. É hash?', savedUser.senha.startsWith('$2b$'));
+    console.log('9. Comparação com senha original:', await bcrypt.compare(testData.senha, savedUser.senha));
+
+    // Limpar
+    await User.deleteOne({ email: testData.email });
+    console.log('10. Usuário teste removido');
+    console.log('=== FIM TESTE ===');
+
+    res.json({ 
+      success: true, 
+      senha_salva: savedUser.senha,
+      eh_hash: savedUser.senha.startsWith('$2b$'),
+      comparacao_valida: await bcrypt.compare(testData.senha, savedUser.senha)
+    });
+
+  } catch (error) {
+    console.error('❌ ERRO NO TESTE:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   loginUser,
   registerUser,
-  registerFuncionario, // ← novo
+  registerFuncionario, 
   getFuncionarios,
-  getMe      // ← novo
+  getMe,
+  debugRegister
 };

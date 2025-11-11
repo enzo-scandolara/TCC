@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-// src/pages/Admin/EmployeeManagement.js
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -24,7 +24,7 @@ const EmployeeManagement = () => {
   const fetchEmployees = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:7777/api/employees', {
+      const response = await fetch('http://localhost:7777/api/users/funcionarios', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -51,7 +51,7 @@ const handleToggleStatus = async (employeeId, currentStatus, employeeNome) => {
 
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:7777/api/employees/${employeeId}/status`, {
+    const response = await fetch(`http://localhost:7777/api/users/funcionarios/${employeeId}/status`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -79,7 +79,7 @@ const handleToggleStatus = async (employeeId, currentStatus, employeeNome) => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:7777/api/employees', {
+      const response = await fetch('http://localhost:7777/api/users/funcionarios', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

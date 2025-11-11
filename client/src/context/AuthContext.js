@@ -15,22 +15,31 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
+          console.log('🔄 AuthContext: Buscando dados do usuário...');
           const response = await fetch('http://localhost:7777/api/users/me', {
             headers: {
-              'Authorization': `Bearer ${token}`
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
             }
           });
           
           if (response.ok) {
             const userData = await response.json();
+            console.log('✅ AuthContext: Usuário carregado', userData.tipo);
             setUser(userData);
           } else {
+            console.log('❌ AuthContext: Token inválido, limpando...');
             localStorage.removeItem('token');
+            setUser(null);
           }
         } catch (error) {
-          console.error('Erro ao buscar dados do usuário:', error);
+          console.error('❌ AuthContext: Erro ao buscar usuário:', error);
           localStorage.removeItem('token');
+          setUser(null);
         }
+      } else {
+        console.log('🔐 AuthContext: Nenhum token encontrado');
+        setUser(null);
       }
       setLoading(false);
     };
@@ -38,11 +47,16 @@ export const AuthProvider = ({ children }) => {
     fetchUserData();
   }, []);
 
-  const login = (userData) => {
+  const login = (userData, token) => {
+    console.log('✅ AuthContext: Login executado', userData.tipo);
     setUser(userData);
+    if (token) {
+      localStorage.setItem('token', token);
+    }
   };
 
   const logout = () => {
+    console.log('🚪 AuthContext: Logout executado');
     setUser(null);
     localStorage.removeItem('token');
   };
@@ -62,5 +76,4 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-  
 };

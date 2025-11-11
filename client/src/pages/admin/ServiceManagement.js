@@ -1,7 +1,5 @@
-// src/pages/admin/ServiceManagement.js
 import { useState, useEffect } from 'react';
-// eslint-disable-next-line no-unused-vars
-import { useAuth } from '../../context/AuthContext';
+import { currencyMask, parseCurrency } from '../../utils/formatUtils'; // ← IMPORTAR
 
 const ServiceManagement = () => {
   const [services, setServices] = useState([]);
@@ -12,14 +10,34 @@ const ServiceManagement = () => {
   const [novoServico, setNovoServico] = useState({
     nome: '',
     descricao: '',
-    duracao: 30,
+    duracao: 30, //  VALOR PADRÃO 30 MINUTOS
     preco: '',
     categoria: 'Corte',
     ativo: true
   });
 
+  //  DURAÇÕES FIXAS
+  const duracaoOptions = [
+    { value: 30, label: '30 minutos' },
+    { value: 45, label: '45 minutos' },
+    { value: 60, label: '60 minutos' }
+  ];
+
   // Categorias disponíveis
   const categoriasDisponiveis = ['Corte', 'Barba', 'Sobrancelha', 'Combo', 'Outros'];
+
+  // ✅ MANIPULADOR DE PREÇO FORMATADO
+  const handlePrecoChange = (e) => {
+    const rawValue = e.target.value;
+    // Aplicar máscara
+    const formattedValue = currencyMask(rawValue);
+    setNovoServico({...novoServico, preco: formattedValue});
+  };
+
+  // ✅ MANIPULADOR DE DURAÇÃO
+  const handleDuracaoChange = (e) => {
+    setNovoServico({...novoServico, duracao: parseInt(e.target.value)});
+  };
 
   // Buscar serviços
   const fetchServices = async () => {
@@ -41,13 +59,26 @@ const ServiceManagement = () => {
     
     try {
       const token = localStorage.getItem('token');
+      
+      // ✅ CONVERTER PREÇO FORMATADO PARA NÚMERO
+      const precoNumerico = parseCurrency(novoServico.preco);
+      
+      if (precoNumerico <= 0) {
+        setMensagem('Preço deve ser maior que zero');
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch('http://localhost:7777/api/services', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(novoServico)
+        body: JSON.stringify({
+          ...novoServico,
+          preco: precoNumerico // ✅ ENVIAR NÚMERO
+        })
       });
 
       const data = await response.json();
@@ -62,7 +93,7 @@ const ServiceManagement = () => {
           categoria: 'Corte',
           ativo: true
         });
-        fetchServices(); // Recarregar lista
+        fetchServices();
       } else {
         setMensagem(data.mensagem || 'Erro ao criar serviço');
       }
@@ -90,7 +121,7 @@ const ServiceManagement = () => {
 
       if (response.ok) {
         setMensagem('Serviço desativado com sucesso!');
-        fetchServices(); // Recarregar lista
+        fetchServices();
       } else {
         setMensagem('Erro ao desativar serviço');
       }
@@ -137,7 +168,34 @@ const ServiceManagement = () => {
                         required
                       />
                     </div>
-                    <div className="col-md-3">
+                    
+                    <div className="col-md-2">
+                      <select
+                        className="form-select"
+                        value={novoServico.duracao}
+                        onChange={handleDuracaoChange}
+                        required
+                      >
+                        {duracaoOptions.map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div className="col-md-2">
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Preço"
+                        value={novoServico.preco}
+                        onChange={handlePrecoChange}
+                        required
+                      />
+                    </div>
+                    
+                    <div className="col-md-2">
                       <select
                         className="form-select"
                         value={novoServico.categoria}
@@ -151,37 +209,24 @@ const ServiceManagement = () => {
                         ))}
                       </select>
                     </div>
-                    <div className="col-md-2">
-                      <input
-                        type="number"
-                        className="form-control"
-                        placeholder="Duração (min)"
-                        value={novoServico.duracao}
-                        onChange={(e) => setNovoServico({...novoServico, duracao: parseInt(e.target.value)})}
-                        min="15"
-                        max="240"
-                        required
-                      />
-                    </div>
-                    <div className="col-md-2">
-                      <input
-                        type="number"
-                        className="form-control"
-                        placeholder="Preço R$"
-                        value={novoServico.preco}
-                        onChange={(e) => setNovoServico({...novoServico, preco: parseFloat(e.target.value)})}
-                        step="0.01"
-                        min="0"
-                        required
-                      />
-                    </div>
-                    <div className="col-md-2">
+                    
+                    <div className="col-md-3">
                       <button 
                         type="submit" 
                         className="btn btn-primary w-100"
                         disabled={loading}
                       >
-                        {loading ? 'Criando...' : 'Criar Serviço'}
+                        {loading ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2"></span>
+                            Criando...
+                          </>
+                        ) : (
+                          <>
+                            <i className="bi bi-plus-circle me-2"></i>
+                            Criar Serviço
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
@@ -198,6 +243,19 @@ const ServiceManagement = () => {
                       />
                     </div>
                   </div>
+                  
+                  {/* Preview do preço */}
+                  {novoServico.preco && (
+                    <div className="row mt-2">
+                      <div className="col-12">
+                        <small className="text-muted">
+                          <i className="bi bi-info-circle me-1"></i>
+                          Preço definido: <strong>{novoServico.preco}</strong> | 
+                          Duração: <strong>{novoServico.duracao} minutos</strong>
+                        </small>
+                      </div>
+                    </div>
+                  )}
                 </form>
               </div>
 
@@ -229,8 +287,17 @@ const ServiceManagement = () => {
                         <td>
                           <span className="badge bg-secondary">{service.categoria}</span>
                         </td>
-                        <td>{service.duracao} min</td>
-                        <td>R$ {service.preco}</td>
+                        <td>
+                          <span className="badge bg-info">{service.duracao} min</span>
+                        </td>
+                        <td>
+                          <strong className="text-success">
+                            {new Intl.NumberFormat('pt-BR', {
+                              style: 'currency',
+                              currency: 'BRL'
+                            }).format(service.preco)}
+                          </strong>
+                        </td>
                         <td>
                           <span className={`badge ${service.ativo ? 'bg-success' : 'bg-secondary'}`}>
                             {service.ativo ? 'Ativo' : 'Inativo'}
@@ -242,7 +309,7 @@ const ServiceManagement = () => {
                             onClick={() => handleDeletarServico(service._id)}
                             disabled={!service.ativo}
                           >
-                            <i className="bi bi-trash"></i> 
+                            <i className="bi bi-trash"></i> Desativar
                           </button>
                         </td>
                       </tr>

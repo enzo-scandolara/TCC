@@ -1,0 +1,51 @@
+/* client/src/pages/employee/EmployeeDashboard.css - TEXTO RETO */
+.employee-dashboard {
+  padding: 1rem;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0c0f15 0%, #1a1d24 100%);
+}
+
+/* HEADER COM TEXTO CENTRALIZADO E RETO */
+.dashboard-header {
+  margin-bottom: 2rem;
+  padding: 1.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center; /* ✅ TEXTO RETO */
+}
+
+.dashboard-title-container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.dashboard-title {
+  color: #d4af37;
+  font-weight: 700;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  text-align: center; /* ✅ TEXTO RETO */
+  line-height: 1.2;
+}
+
+.dashboard-subtitle {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+  margin: 0;
+  text-align: center; /* ✅ TEXTO RETO */
+  line-height: 1.5;
+}
+
+/* RESPONSIVIDADE */
+@media (max-width: 768px) {
+  .employee-dashboard {
+    padding: 0.5rem;
+  }
+  
+  .dashboard-title {
+    font-size: 1.5rem;
+  }
+  
+  .dashboard-subtitle {
+    font-size: 0.9rem;
+  }
+}

@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import Home from './pages/Home';
 import Layout from './components/Layout';
@@ -11,62 +10,78 @@ import CompletedAppointments from './pages/CompletedAppointments';
 import ServiceManagement from './pages/admin/ServiceManagement'; 
 import PrivateRoute from './components/PrivateRoute';
 import EmployeeManagement from './pages/admin/EmployeeManagement';
+import EmployeeDashboard from './pages/employee/EmployeeDashboard';
 
 export default function App() {
-  const [token, setToken] = useState(localStorage.getItem('token'));
-
   return (
-  <AuthProvider> 
-    <Router>
-      <Routes>
-        {/* ROTAS PÚBLICAS */} 
-        <Route path="/" element={
-        token ? ( <Home />) : (<Navigate to="/login" replace /> )} />   
-        <Route path="/login" element={<Login onLogin={(token) => { localStorage.setItem('token', token); setToken(token); }} />} />
-        <Route path="/register" element={<Register />} />
-       {/* ROTAS COM LAYOUT */}
-       
+    <AuthProvider> 
+      <Router>
+        <Routes>
+          {/* ROTAS PÚBLICAS */} 
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          
+          {/* ROTAS AUTENTICADAS COM LAYOUT */}
+          <Route path="/" element={
+            <PrivateRoute>
+              <Layout>
+                <Home />
+              </Layout>
+            </PrivateRoute>
+          } />
+          
           <Route path="/agendar" element={
-            <Layout>
-              <PrivateRoute>
+            <PrivateRoute>
+              <Layout>
                 <NewAppointment />
-              </PrivateRoute>
-            </Layout>
+              </Layout>
+            </PrivateRoute>
           } />
           
           <Route path="/agendamentos/pendentes" element={
-            <Layout>
-              <PrivateRoute>
+            <PrivateRoute>
+              <Layout>
                 <PendingAppointments />
-              </PrivateRoute>
-            </Layout>
+              </Layout>
+            </PrivateRoute>
           } />
           
           <Route path="/agendamentos/historico" element={
-            <Layout>
-              <PrivateRoute>
+            <PrivateRoute>
+              <Layout>
                 <CompletedAppointments />
-              </PrivateRoute>
-            </Layout>
+              </Layout>
+            </PrivateRoute>
           } />
           
+          {/* ROTA DO FUNCIONÁRIO */}
+          <Route path="/employee/dashboard" element={
+            <PrivateRoute requiredRole="funcionario">
+              <Layout>
+                <EmployeeDashboard />
+              </Layout>
+            </PrivateRoute>
+          } />
           
+          {/* ROTAS ADMIN */}
           <Route path="/admin/servicos" element={
-            <Layout>
-              <PrivateRoute requiredRole="admin">
+            <PrivateRoute requiredRole="admin">
+              <Layout>
                 <ServiceManagement />
-              </PrivateRoute>
-            </Layout>
+              </Layout>
+            </PrivateRoute>
           } />
           
           <Route path="/admin/funcionarios" element={
-  <Layout>
-    <PrivateRoute requiredRole="admin">
-      <EmployeeManagement />
-    </PrivateRoute>
-  </Layout>
-} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+            <PrivateRoute requiredRole="admin">
+              <Layout>
+                <EmployeeManagement />
+              </Layout>
+            </PrivateRoute>
+          } />
+          
+          {/* REDIRECIONAMENTO PADRÃO */}
+          <Route path="*" element={<PrivateRoute><Layout><Home /></Layout></PrivateRoute>} />
         </Routes>
       </Router>
     </AuthProvider>

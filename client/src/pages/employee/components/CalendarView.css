@@ -1,0 +1,392 @@
+/* client/src/pages/employee/components/CalendarView.css */
+@import url('https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css');
+
+.calendar-container {
+  background: rgba(13, 17, 23, 0.8);
+  border-radius: 12px;
+  padding: 24px;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  min-height: 700px;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.8);
+  padding: 16px 24px;
+  border-radius: 8px;
+  color: #d4af37;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+}
+
+.calendar-wrapper {
+  position: relative;
+  min-height: 600px;
+}
+
+.calendar-header h4 {
+  color: #d4af37;
+  font-weight: 700;
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.calendar-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.calendar-wrapper {
+  background: #1a1d24;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  min-height: 600px;
+}
+
+.fullcalendar-container {
+  height: 100%;
+  min-height: 550px;
+}
+
+/* ✅ DROPDOWN DE AÇÕES ESTILIZADO */
+.dropdown-menu.bg-dark {
+  background: #1a1d24 !important;
+  border: 1px solid #495057 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dropdown-item {
+  color: #e9ecef !important;
+  padding: 8px 12px !important;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background: rgba(212, 175, 55, 0.1) !important;
+  color: #d4af37 !important;
+}
+
+.dropdown-item.text-success:hover {
+  background: rgba(40, 167, 69, 0.1) !important;
+}
+
+.dropdown-item.text-danger:hover {
+  background: rgba(220, 53, 69, 0.1) !important;
+}
+
+.dropdown-item.text-warning:hover {
+  background: rgba(255, 193, 7, 0.1) !important;
+}
+
+.dropdown-item.text-info:hover {
+  background: rgba(23, 162, 184, 0.1) !important;
+}
+
+/* ✅ EVENTOS EM TODAS AS VISUALIZAÇÕES - GRANDES E LEGÍVEIS */
+
+/* MODO MÊS */
+.fc-daygrid-event {
+  border: none !important;
+  border-radius: 8px;
+  padding: 6px 8px !important;
+  font-size: 0.8rem !important;
+  font-weight: 600;
+  margin: 3px 2px !important;
+  min-height: 28px !important;
+  line-height: 1.3 !important;
+  text-align: center !important;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.fc-daygrid-event:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.fc-daygrid-event .fc-event-title {
+  font-weight: 600;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  line-height: 1.3 !important;
+}
+
+/* MODO SEMANA/DIA */
+.fc-timegrid-event {
+  border: none !important;
+  border-radius: 8px;
+  padding: 8px 10px !important;
+  font-size: 0.85rem !important;
+  font-weight: 600;
+  margin: 2px 1px !important;
+  min-height: 32px !important;
+  line-height: 1.3 !important;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.fc-timegrid-event:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.fc-timegrid-event .fc-event-main {
+  padding: 4px 6px !important;
+}
+
+.fc-timegrid-event .fc-event-title {
+  font-size: 0.85rem !important;
+  font-weight: 600;
+  line-height: 1.3 !important;
+}
+
+/* MODO LISTA */
+.fc-list-event {
+  border: none !important;
+  border-radius: 8px;
+  padding: 10px 14px !important;
+  font-size: 0.9rem !important;
+  font-weight: 600;
+  min-height: 36px !important;
+  line-height: 1.4 !important;
+  margin: 2px 0 !important;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.fc-list-event:hover {
+  transform: translateX(2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.fc-list-event-title {
+  font-size: 0.9rem !important;
+  font-weight: 600;
+  line-height: 1.4 !important;
+}
+
+/* ✅ CORES CONSISTENTES EM TODAS AS VIEWS */
+.fc-daygrid-event[style*="background-color: rgb(255, 193, 7)"],
+.fc-timegrid-event[style*="background-color: rgb(255, 193, 7)"],
+.fc-list-event[style*="background-color: rgb(255, 193, 7)"] {
+  background: linear-gradient(135deg, #ffc107, #e0a800) !important;
+  border-left: 4px solid #e0a800 !important;
+}
+
+.fc-daygrid-event[style*="background-color: rgb(40, 167, 69)"],
+.fc-timegrid-event[style*="background-color: rgb(40, 167, 69)"],
+.fc-list-event[style*="background-color: rgb(40, 167, 69)"] {
+  background: linear-gradient(135deg, #28a745, #1e7e34) !important;
+  border-left: 4px solid #1e7e34 !important;
+}
+
+.fc-daygrid-event[style*="background-color: rgb(108, 117, 125)"],
+.fc-timegrid-event[style*="background-color: rgb(108, 117, 125)"],
+.fc-list-event[style*="background-color: rgb(108, 117, 125)"] {
+  background: linear-gradient(135deg, #6c757d, #545b62) !important;
+  border-left: 4px solid #545b62 !important;
+}
+
+.fc-daygrid-event[style*="background-color: rgb(220, 53, 69)"],
+.fc-timegrid-event[style*="background-color: rgb(220, 53, 69)"],
+.fc-list-event[style*="background-color: rgb(220, 53, 69)"] {
+  background: linear-gradient(135deg, #dc3545, #c82333) !important;
+  border-left: 4px solid #c82333 !important;
+}
+
+/* ✅ MAIS ESPAÇO EM TODAS AS VIEWS */
+.fc-daygrid-day-frame {
+  min-height: 95px !important;
+  padding: 4px !important;
+}
+
+.fc-timegrid-slot {
+  min-height: 45px !important;
+}
+
+.fc-timegrid-event-harness {
+  margin: 2px 0 !important;
+}
+
+.fc-daygrid-day-events {
+  margin: 3px 0 !important;
+  min-height: 30px !important;
+}
+
+/* Restante do CSS padrão */
+.fc {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #e9ecef;
+}
+
+.fc-toolbar {
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px !important;
+}
+
+.fc-toolbar-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #d4af37 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.fc-button {
+  background: linear-gradient(135deg, #343a40, #2c3036) !important;
+  border: 1px solid #495057 !important;
+  color: #e9ecef !important;
+  font-weight: 600;
+  border-radius: 6px !important;
+  padding: 8px 16px !important;
+  transition: all 0.3s ease !important;
+}
+
+.fc-button:hover {
+  background: linear-gradient(135deg, #495057, #3d4249) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.fc-button-active {
+  background: linear-gradient(135deg, #d4af37, #b8941f) !important;
+  border-color: #d4af37 !important;
+  color: #000 !important;
+}
+
+.fc-day-today {
+  background: rgba(212, 175, 55, 0.15) !important;
+}
+
+.fc-day-today .fc-daygrid-day-number {
+  color: #d4af37 !important;
+  font-weight: 700;
+}
+
+.fc-col-header {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.fc-col-header-cell-cushion {
+  color: #d4af37 !important;
+  font-weight: 600;
+  padding: 12px 8px !important;
+}
+
+.fc-daygrid-day-number {
+  color: #e9ecef;
+  font-weight: 500;
+  padding: 8px !important;
+}
+
+/* Modal styles */
+.appointment-modal .modal-content {
+  background: #1a1d24;
+  border: 2px solid #d4af37;
+  border-radius: 12px;
+}
+
+.appointment-modal .modal-header {
+  border-bottom: 1px solid #495057;
+  padding: 20px 24px;
+}
+
+.appointment-modal .modal-title {
+  color: #d4af37;
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+.appointment-modal .modal-body {
+  padding: 24px;
+}
+
+.detail-section {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #495057;
+}
+
+.detail-section h6 {
+  color: #d4af37;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  font-size: 1.1rem;
+}
+
+.detail-section p {
+  margin-bottom: 8px;
+  color: #e9ecef;
+  line-height: 1.5;
+}
+
+.notes-section {
+  background: rgba(212, 175, 55, 0.08);
+  padding: 16px;
+  border-radius: 8px;
+  border-left: 4px solid #d4af37;
+  margin-top: 12px;
+}
+
+.status-badge {
+  font-size: 0.8rem;
+  padding: 8px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .calendar-container {
+    padding: 16px;
+  }
+  
+  .calendar-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .fc-daygrid-event {
+    font-size: 0.75rem !important;
+    padding: 4px 6px !important;
+    min-height: 24px !important;
+  }
+  
+  .fc-timegrid-event {
+    font-size: 0.8rem !important;
+    padding: 6px 8px !important;
+    min-height: 28px !important;
+  }
+  
+  .fc-list-event {
+    font-size: 0.85rem !important;
+    padding: 8px 10px !important;
+    min-height: 32px !important;
+  }
+}
